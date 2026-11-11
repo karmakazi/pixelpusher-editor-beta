@@ -1,0 +1,28 @@
+:root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #111; color: #f6f5ef; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header { display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid #373737; padding: 1rem 1.5rem; }
+header strong { letter-spacing: -.045em; font-size: 1.2rem; }
+header span, .hint { color: #afafa9; }
+header a { margin-left: auto; color: inherit; }
+main { display: grid; grid-template-columns: minmax(19rem, 24rem) minmax(0, 1fr); }
+.controls { padding: 1.5rem; }
+h1 { font-size: 1.75rem; letter-spacing: -.04em; margin: 0 0 1.3rem; }
+h2, label { font-size: .85rem; font-weight: 650; }
+label { display: flex; justify-content: space-between; margin: 1rem 0 .35rem; }
+input, select, textarea, button { font: inherit; border-radius: .4rem; }
+input, select, textarea { display: block; width: 100%; padding: .65rem; border: 1px solid #525252; background: #1c1c1c; color: inherit; }
+textarea { resize: vertical; }
+button { cursor: pointer; padding: .6rem .75rem; border: 1px solid transparent; font-size: .82rem; font-weight: 650; background: #d9f36c; color: #171a0b; }
+button:disabled { opacity: .5; cursor: default; }
+.secondary { background: transparent; color: inherit; border-color: #555; }
+#generate { margin-top: .7rem; }
+#status, .hint, .original p { font-size: .85rem; line-height: 1.5; }
+.original { padding-top: .5rem; border-top: 1px solid #373737; }
+.original p { color: #c7c7bf; }
+.actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .7rem; }
+.preview { background: #212121; border-left: 1px solid #373737; min-height: calc(100vh - 58px); display: flex; flex-direction: column; align-items: center; }
+.preview-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: .65rem 1rem; font-size: .85rem; }
+iframe { width: 100%; flex: 1; min-height: 32rem; border: 0; background: #111; }
+iframe.mobile { width: min(100%, 390px); }
+@media (max-width: 740px) { main { grid-template-columns: 1fr; } .preview { min-height: 36rem; border-left: 0; border-top: 1px solid #373737; } }

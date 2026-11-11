@@ -4,6 +4,19 @@
 let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
+let introPreview = null;
+
+if (window.parent !== window && new URLSearchParams(location.search).has('editor-preview')) {
+  window.addEventListener('message', event => {
+    if (event.origin !== location.origin || event.source !== window.parent) return;
+    const { type, projectId, tagline } = event.data || {};
+    if (type !== 'pixelpusher-intro-preview' || typeof projectId !== 'string' ||
+        typeof tagline !== 'string' || tagline.length > 240) return;
+    introPreview = { projectId, tagline };
+    const intro = document.querySelector('.case-tagline');
+    if (intro && currentView === `case:${projectId}`) intro.textContent = tagline;
+  });
+}
 
 // ── CURSOR ─────────────────────────────────────────────────
 const cur = document.getElementById('cur');
@@ -523,7 +536,7 @@ function renderCase(id) {
       </div>
       <p class="case-eyebrow">${p.client}</p>
       <h1 class="case-h1">${h1Html}</h1>
-      <p class="case-tagline">${p.tagline}</p>
+      <p class="case-tagline"></p>
       <span class="case-hero-scroll">Scroll to explore</span>
     </section>
 
@@ -560,6 +573,8 @@ function renderCase(id) {
     ${nextBlock}
 
   `;
+  document.querySelector('.case-tagline').textContent =
+    introPreview?.projectId === id ? introPreview.tagline : p.tagline;
 
   initReveal();
   fitTitle();

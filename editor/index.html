@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Pixelpusher Editor</title>
+  <link rel="stylesheet" href="/editor/editor.css">
+  <script defer src="/editor/editor.js"></script>
+</head>
+<body>
+  <header><strong>PIXELPUSHER</strong><span>Site editor</span><a href="/">View site ↗</a></header>
+  <main>
+    <section class="controls" aria-labelledby="heading">
+      <h1 id="heading">Edit a case study</h1>
+      <label for="project">Project</label>
+      <select id="project" disabled></select>
+      <form id="assistant">
+        <label for="instruction">What should change?</label>
+        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Make the intro shorter and lead with what we built."></textarea>
+        <label for="access">Editor access code</label>
+        <input id="access" type="password" autocomplete="off" required>
+        <button id="generate" disabled>Draft with AI</button>
+      </form>
+      <p id="status" role="status"></p>
+      <div class="original"><h2>Original intro</h2><p id="original"></p></div>
+      <label for="draft">Draft intro <small id="count"></small></label>
+      <textarea id="draft" rows="4" maxlength="240" disabled></textarea>
+      <div class="actions">
+        <button id="download" disabled>Download updated content</button>
+        <button class="secondary" id="reset" disabled>Reset draft</button>
+      </div>
+      <p class="hint">Downloads the updated projects.json for review. Your draft is visible in the preview.</p>
+    </section>
+    <section class="preview" aria-label="Case study preview">
+      <div class="preview-bar"><strong>Draft preview</strong><button class="secondary" id="mobile" aria-pressed="false">Mobile view</button></div>
+      <iframe id="preview" title="Pixelpusher case study preview"></iframe>
+    </section>
+  </main>
+</body>
+</html>
