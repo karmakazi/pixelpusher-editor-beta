@@ -572,7 +572,10 @@
     "id": "volkswagen-augmented-reality",
     "client": "Volkswagen",
     "title": "Augmented Reality",
-    "titleLines": ["Augmented", "Reality"],
+    "titleLines": [
+      "Augmented",
+      "Reality"
+    ],
     "category": "Digital Experience",
     "featured": false,
     "featuredWide": false,
@@ -580,23 +583,43 @@
     "vimeoId": "33296885",
     "thumbSeed": "volkswagen-pp",
     "heroSeed": "volkswagen-hero",
-    "heroImg": null,
+    "heroImg": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/2ca766ad-3b29-47be-84bc-3e3e57747b48.png",
     "tagline": "Large-scale augmented reality, off a billboard, in downtown Toronto. It had never been done before.",
     "pullQuote": "The brief was to do something impossible with AR. We love briefs like that.",
     "copy": [
-      "Red Urban gave us one of the most technically audacious briefs of our career: build an augmented reality experience that runs off the giant outdoor billboards at Dundas Square, for the launch of the Volkswagen Beetle Turbo. Large-scale outdoor AR \u2014 not on a phone screen, not in a controlled environment, but live, at street level, anchored to a massive public display \u2014 had never been attempted before.",
-      "Using String AR technology, we built an experience that let pedestrians interact with a virtual Beetle through their phones at a scale that stopped people in their tracks. Testing on-site was nearly impossible given the variables \u2014 weather, ambient light, distance \u2014 but we delivered. The Beetle launch became one of the most memorable outdoor moments in Volkswagen Canada\u2019s recent history."
+      "Red Urban gave us one of the most technically audacious briefs of our career: build an augmented reality experience that runs off the giant outdoor billboards at Dundas Square, for the launch of the Volkswagen Beetle Turbo. Large-scale outdoor AR — not on a phone screen, not in a controlled environment, but live, at street level, anchored to a massive public display — had never been attempted before.",
+      "Using String AR technology, we built an experience that let pedestrians interact with a virtual Beetle through their phones at a scale that stopped people in their tracks. Testing on-site was nearly impossible given the variables — weather, ambient light, distance — but we delivered. The Beetle launch became one of the most memorable outdoor moments in Volkswagen Canada’s recent history."
     ],
     "gallery": [
-      { "wide": true,  "seed": "vw-wide1", "alt": "Volkswagen AR Dundas Square" },
-      { "wide": false, "seed": "vw-a",     "alt": "AR Beetle on billboard" },
-      { "wide": false, "seed": "vw-b",     "alt": "Phone interaction detail" },
-      { "wide": true,  "seed": "vw-wide2", "alt": "Street-level activation" }
+      {
+        "wide": true,
+        "seed": "vw-wide1",
+        "alt": "Volkswagen AR Dundas Square"
+      },
+      {
+        "wide": false,
+        "seed": "vw-a",
+        "alt": "AR Beetle on billboard"
+      },
+      {
+        "wide": false,
+        "seed": "vw-b",
+        "alt": "Phone interaction detail"
+      },
+      {
+        "wide": true,
+        "seed": "vw-wide2",
+        "alt": "Street-level activation"
+      }
     ],
     "meta": {
       "year": "2012",
       "client": "Volkswagen Canada",
-      "services": ["AR Development", "Large-Scale Installation", "Interactive Experience"],
+      "services": [
+        "AR Development",
+        "Large-Scale Installation",
+        "Interactive Experience"
+      ],
       "industry": "Automotive",
       "agency": "Red Urban",
       "productionCo": null
