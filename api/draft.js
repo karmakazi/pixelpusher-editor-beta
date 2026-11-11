@@ -17,11 +17,12 @@ module.exports = async function draft(req, res) {
   if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
     return res.status(401).json({ error: 'Sign in to continue.' });
   }
-  const { projectId, instruction, field = 'tagline', current } = req.body || {};
+  const { projectId, instruction, field = 'tagline', current, originalCopy } = req.body || {};
   const legacy = req.body?.field === undefined;
   const project = projects.find(item => item.id === projectId && !item.comingSoon);
   if (!project || !Object.hasOwn(CaseCopy.fields, field) ||
-      (current !== undefined && (typeof current !== 'string' || current.length > CaseCopy.fields[field].max)) ||
+      [current, originalCopy].some(value => value !== undefined &&
+        (typeof value !== 'string' || value.length > CaseCopy.fields[field].max)) ||
       typeof instruction !== 'string' || !instruction.trim() || instruction.length > 1500) {
     return res.status(400).json({ error: 'Choose a project and enter an instruction of up to 1,500 characters.' });
   }
@@ -40,12 +41,15 @@ module.exports = async function draft(req, res) {
         store: false,
         reasoning: { effort: 'none' },
         max_output_tokens: field === 'copy' ? 4200 : 600,
-        instructions: 'Rewrite only the requested case study field in plain text. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. For body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
+        instructions: 'Rewrite only the requested case study field in plain text. Use workingDraft as the text to revise for follow-ups such as “make it shorter,” even when it differs from publishedCopy. Use publishedCopy as the rewrite target only if the editor explicitly refers to the published or original version. Use the other fields as factual context. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. For body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
         input: JSON.stringify({
           field: definition.label,
           maxCharacters: definition.max,
-          current: current ?? CaseCopy.read(project, field),
-          context: Object.fromEntries(Object.keys(CaseCopy.fields).map(key => [key, CaseCopy.read(project, key)])),
+          workingDraft: current ?? CaseCopy.read(project, field),
+          publishedCopy: originalCopy ?? CaseCopy.read(project, field),
+          otherProjectFields: Object.fromEntries(Object.keys(CaseCopy.fields)
+            .filter(key => key !== field)
+            .map(key => [key, CaseCopy.read(project, key)])),
           instruction,
         }),
         text: { format: {

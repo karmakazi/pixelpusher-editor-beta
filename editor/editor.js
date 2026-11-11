@@ -15,6 +15,7 @@ const workspace = document.querySelector('#workspace');
 const status = document.querySelector('#status');
 const preview = document.querySelector('#preview');
 const generate = document.querySelector('#generate');
+const restoreDraft = document.querySelector('#restore-draft');
 const publish = document.querySelector('#publish');
 const undo = document.querySelector('#undo');
 const releaseStatus = document.querySelector('#release-status');
@@ -26,6 +27,7 @@ const mobile = document.querySelector('#mobile');
 let projects = [];
 let selected;
 let edits = {};
+const previousDrafts = new Map();
 let revision = 0;
 let pending = false;
 let releasing = false;
@@ -121,6 +123,8 @@ function updateDraft() {
   undo.disabled = releasing || pending || Boolean(entries.length) ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
   reset.disabled = releasing || !entries.length;
+  restoreDraft.hidden = !previousDrafts.has(field);
+  restoreDraft.disabled = releasing || pending;
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-copy-preview',
     projectId: selected.id,
@@ -145,6 +149,9 @@ function selectProject() {
   revision++;
   selected = projects.find(project => project.id === projectSelect.value);
   edits = {};
+  previousDrafts.clear();
+  instruction.value = '';
+  fieldSelect.value = 'tagline';
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
   preview.src = `/?editor-preview=1#/work/${encodeURIComponent(selected.id)}`;
@@ -168,13 +175,28 @@ projectSelect.addEventListener('change', () => {
   }
   selectProject();
 });
-fieldSelect.addEventListener('change', () => { revision++; showField(); });
+fieldSelect.addEventListener('change', () => {
+  revision++;
+  instruction.value = '';
+  showField();
+});
+instruction.addEventListener('input', () => { revision++; });
 draft.addEventListener('input', editField);
 reset.addEventListener('click', () => {
   revision++;
   edits = {};
+  previousDrafts.clear();
+  instruction.value = '';
   showField();
   status.textContent = 'Draft reset.';
+});
+restoreDraft.addEventListener('click', () => {
+  const field = fieldSelect.value;
+  if (!previousDrafts.has(field)) return;
+  draft.value = previousDrafts.get(field);
+  previousDrafts.delete(field);
+  editField();
+  status.textContent = 'Previous draft restored.';
 });
 mobile.addEventListener('click', () => {
   const enabled = preview.classList.toggle('mobile');
@@ -186,6 +208,9 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
   event.preventDefault();
   if (pending || releasing || !selected) return;
   const requestedRevision = revision;
+  const field = fieldSelect.value;
+  const current = draft.value;
+  const originalCopy = CaseCopy.read(selected, field);
   pending = true;
   generate.disabled = signOut.disabled = true;
   updateDraft();
@@ -194,21 +219,23 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
     const response = await fetch('/api/draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: selected.id, field: fieldSelect.value, current: draft.value, instruction: instruction.value }),
+      body: JSON.stringify({ projectId: selected.id, field, current, originalCopy, instruction: instruction.value }),
     });
     if (response.status === 401) return sessionExpired();
     const proposal = await response.json();
-    if (!response.ok) throw new Error(proposal.error);
     if (revision !== requestedRevision) {
-      status.textContent = 'The draft changed while AI was working. Generate again to see a new suggestion.';
+      if (status.textContent === 'Drafting…') status.textContent = 'The draft or instruction changed. Try again.';
       return;
     }
-    if (proposal.value !== null) {
+    if (!response.ok) throw new Error(proposal.error);
+    if (proposal.value !== null && proposal.value !== current) {
+      previousDrafts.set(field, current);
       draft.value = proposal.value;
       editField();
     }
     status.textContent = proposal.note || 'Draft ready for review.';
   } catch (error) {
+    if (revision !== requestedRevision) return;
     status.textContent = error instanceof SyntaxError
       ? 'AI drafting is unavailable here. You can still edit the draft directly.'
       : error.message;
@@ -268,6 +295,7 @@ async function release(isUndo) {
     projectSelect.selectedOptions[0].textContent =
       `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`;
     edits = {};
+    previousDrafts.clear();
     if (isUndo) instruction.value = '';
     showField();
     commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${result.commit}`;

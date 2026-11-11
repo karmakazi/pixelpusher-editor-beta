@@ -29,7 +29,7 @@
       <select id="field" disabled></select>
       <form id="assistant">
         <label for="instruction">What should change?</label>
-        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Describe what you want to change in the selected copy."></textarea>
+        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Revise the draft, for example: Make it shorter."></textarea>
 
         <button id="generate" disabled>Draft with AI</button>
       </form>
@@ -37,6 +37,7 @@
       <div class="original"><h2>Published copy</h2><p id="original"></p></div>
       <label for="draft">Draft copy <small id="count"></small></label>
       <textarea id="draft" rows="4" disabled></textarea>
+      <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
       <p id="changes" role="status"></p>
       <div class="actions">
         <button id="publish" disabled>Publish to beta</button>
