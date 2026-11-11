@@ -5,18 +5,65 @@ let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
 let casePreview = null;
+const editorPreview = window.parent !== window && new URLSearchParams(location.search).has('editor-preview');
 
-if (window.parent !== window && new URLSearchParams(location.search).has('editor-preview')) {
+if (editorPreview) {
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
-    const { type, projectId, values } = event.data || {};
+    const { type, projectId, values, selection, locked, inline } = event.data || {};
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
         !Object.entries(values).every(([field, value]) => CaseCopy.valid(field, value))) return;
-    if (casePreview?.projectId === projectId && JSON.stringify(casePreview.values) === JSON.stringify(values)) return;
-    casePreview = { projectId, values };
-    if (currentView === `case:${projectId}`) renderCase(projectId, true);
+    const changed = casePreview?.projectId !== projectId || JSON.stringify(casePreview.values) !== JSON.stringify(values);
+    casePreview = { projectId, values, selection, locked };
+    if (currentView !== `case:${projectId}`) return;
+    if (changed && !(inline && document.activeElement?.matches('[data-copy-field]'))) {
+      renderCase(projectId, true);
+    } else {
+      syncEditableCopy();
+    }
   });
+
+  document.addEventListener('focusin', event => {
+    const node = event.target.closest('[data-copy-field]');
+    if (!node || node.contentEditable === 'false') return;
+    sendCopyEvent(node, 'pixelpusher-copy-select');
+  });
+
+  document.addEventListener('input', event => {
+    const node = event.target.closest('[data-copy-field]');
+    if (node) sendCopyEvent(node, 'pixelpusher-copy-input', node.innerText);
+  });
+
+  document.addEventListener('click', event => {
+    if (event.target.closest('a')) event.preventDefault();
+  });
+}
+
+function editableCopy(field, paragraph) {
+  if (!editorPreview) return '';
+  const label = paragraph === undefined ? CaseCopy.fields[field].label : `Body paragraph ${paragraph + 1}`;
+  const index = paragraph === undefined ? '' : ` data-copy-paragraph="${paragraph}"`;
+  return ` data-copy-field="${field}"${index} data-placeholder="${label}" role="textbox" aria-label="${label}"`;
+}
+
+function syncEditableCopy() {
+  for (const node of document.querySelectorAll('[data-copy-field]')) {
+    const selection = casePreview?.selection;
+    const paragraph = node.dataset.copyParagraph === undefined ? null : Number(node.dataset.copyParagraph);
+    node.classList.toggle('copy-selected', selection?.field === node.dataset.copyField && selection.paragraph === paragraph);
+    node.contentEditable = casePreview?.locked ? 'false' : 'plaintext-only';
+  }
+}
+
+function sendCopyEvent(node, type, value) {
+  window.parent.postMessage({
+    type,
+    projectId: currentView.slice(5),
+    field: node.dataset.copyField,
+    paragraph: node.dataset.copyParagraph === undefined ? null : Number(node.dataset.copyParagraph),
+    value,
+  }, location.origin);
 }
 
 // ── CURSOR ─────────────────────────────────────────────────
@@ -514,7 +561,7 @@ function renderCase(id, preserveScroll = false) {
   // Case-copy paragraphs with stagger
   const copyHtml = p.copy.map((para, i) => {
     const d = i === 0 ? ' d1' : i === 1 ? ' d2' : ' d3';
-    return `<p class="case-copy r${d}">${para}</p>`;
+    return `<p class="case-copy r${d}"${editableCopy('copy', i)}>${para}</p>`;
   }).join('\n        ');
 
   // Next project block
@@ -538,33 +585,35 @@ function renderCase(id, preserveScroll = false) {
       <div class="case-hero-img">
         <img src="${p.heroImg || heroUrl(p.heroSeed)}" alt="${p.client} \u2014 ${p.title}" />
       </div>
-      <p class="case-eyebrow">${p.client}</p>
-      <h1 class="case-h1">${h1Html}</h1>
-      <p class="case-tagline"></p>
+      <p class="case-eyebrow"${editableCopy('client')}>${p.client}</p>
+      <h1 class="case-h1"${editableCopy('title')}>${h1Html}</h1>
+      <p class="case-tagline"${editableCopy('tagline')}></p>
       <span class="case-hero-scroll">Scroll to explore</span>
     </section>
 
     <section class="case-meta">
       <div>
         <p class="case-meta-label">Client</p>
-        <p class="case-meta-value">${p.meta.client}</p>
+        <p class="case-meta-value"${editableCopy('clientCredit')}>${p.meta.client}</p>
       </div>
       <div>
         <p class="case-meta-label">Agency</p>
-        <p class="case-meta-value">${p.meta.agency || '\u2014'}</p>
+        <p class="case-meta-value"${editableCopy('agency')}>${p.meta.agency || (editorPreview ? '' : '\u2014')}</p>
       </div>
       <div>
         <p class="case-meta-label">Services</p>
-        <p class="case-meta-value">${p.meta.services.join('<br>')}</p>
+        <p class="case-meta-value"${editableCopy('services')}>${p.meta.services.join('<br>')}</p>
       </div>
       <div>
         <p class="case-meta-label">Industry</p>
-        <p class="case-meta-value">${p.meta.industry}</p>
+        <p class="case-meta-value"${editableCopy('industry')}>${p.meta.industry}</p>
       </div>
     </section>
 
     <section class="case-overview">
-      ${p.pullQuote ? `<p class="case-pull r">\u201c${p.pullQuote}\u201d</p>` : ''}
+      ${editorPreview
+        ? `<p class="case-pull r"${editableCopy('pullQuote')}>${p.pullQuote || ''}</p>`
+        : p.pullQuote ? `<p class="case-pull r">\u201c${p.pullQuote}\u201d</p>` : ''}
       <div>
         ${copyHtml}
       </div>
@@ -583,6 +632,7 @@ function renderCase(id, preserveScroll = false) {
   initReveal();
   fitTitle();
   initVideoBlocks();
+  if (editorPreview) syncEditableCopy();
 }
 
 // ── VIDEO BLOCKS ──────────────────────────────────────────

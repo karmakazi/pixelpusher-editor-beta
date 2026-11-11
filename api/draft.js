@@ -17,7 +17,8 @@ module.exports = async function draft(req, res) {
   if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
     return res.status(401).json({ error: 'Sign in to continue.' });
   }
-  const { projectId, instruction, field = 'tagline', current, originalCopy } = req.body || {};
+  const { projectId, instruction, field = 'tagline', current, originalCopy, paragraph = null } = req.body || {};
+  const isParagraph = paragraph !== null;
   const legacy = req.body?.field === undefined;
   const project = projects.find(item => item.id === projectId && !item.comingSoon);
   if (!project || !Object.hasOwn(CaseCopy.fields, field) ||
@@ -28,6 +29,13 @@ module.exports = async function draft(req, res) {
   }
 
   const definition = CaseCopy.fields[field];
+  const fieldCopy = CaseCopy.read(project, field);
+  const paragraphs = fieldCopy.split('\n\n');
+  if (isParagraph && (field !== 'copy' || !Number.isInteger(paragraph) || paragraph < 0 || paragraph >= paragraphs.length)) {
+    return res.status(400).json({ error: 'Select a paragraph in the case study.' });
+  }
+  const fallback = isParagraph ? paragraphs[paragraph] : fieldCopy;
+  const label = isParagraph ? `Body paragraph ${paragraph + 1}` : definition.label;
   try {
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -41,14 +49,14 @@ module.exports = async function draft(req, res) {
         store: false,
         reasoning: { effort: 'none' },
         max_output_tokens: field === 'copy' ? 4200 : 600,
-        instructions: 'Rewrite only the requested case study field in plain text. Use workingDraft as the text to revise for follow-ups such as “make it shorter,” even when it differs from publishedCopy. Use publishedCopy as the rewrite target only if the editor explicitly refers to the published or original version. Use the other fields as factual context. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. For body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
+        instructions: 'Rewrite only the requested case study field in plain text. Use workingDraft as the text to revise for follow-ups such as “make it shorter,” even when it differs from publishedCopy. Use publishedCopy as the rewrite target only if the editor explicitly refers to the published or original version. Use the other fields as factual context. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. When the selected field is a body paragraph, return exactly one paragraph with no line breaks. For whole body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
         input: JSON.stringify({
-          field: definition.label,
+          field: label,
           maxCharacters: definition.max,
-          workingDraft: current ?? CaseCopy.read(project, field),
-          publishedCopy: originalCopy ?? CaseCopy.read(project, field),
+          workingDraft: current ?? fallback,
+          publishedCopy: originalCopy ?? fallback,
           otherProjectFields: Object.fromEntries(Object.keys(CaseCopy.fields)
-            .filter(key => key !== field)
+            .filter(key => key !== field || isParagraph)
             .map(key => [key, CaseCopy.read(project, key)])),
           instruction,
         }),
@@ -77,7 +85,7 @@ module.exports = async function draft(req, res) {
       return res.status(422).json({ error: 'The model did not return a draft. Try a more specific instruction.' });
     }
     const proposal = JSON.parse(output.text);
-    if ((proposal.value !== null && !CaseCopy.valid(field, proposal.value)) || typeof proposal.note !== 'string') {
+    if ((proposal.value !== null && (!CaseCopy.valid(field, proposal.value) || (isParagraph && /[\r\n]/.test(proposal.value)))) || typeof proposal.note !== 'string') {
       return res.status(422).json({ error: 'The draft was outside the field limits. Try a shorter edit.' });
     }
     return res.status(200).json(legacy ? { tagline: proposal.value || '', note: proposal.note } : proposal);

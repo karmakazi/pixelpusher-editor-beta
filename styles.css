@@ -889,3 +889,20 @@ footer a:hover { color: var(--off-white); }
   .case-overview      { grid-template-columns: 1fr; }
   .case-gallery-pair  { grid-template-columns: 1fr; }
 }
+
+/* Editing affordances are added only inside the editor preview. */
+[data-copy-field] {
+  cursor: text;
+  white-space: pre-wrap;
+  outline-offset: 4px;
+}
+[data-copy-field]:hover { outline: 1px dashed #d9f36c; }
+[data-copy-field].copy-selected,
+[data-copy-field]:focus { outline: 2px solid #d9f36c; }
+[data-copy-field]:empty::before {
+  content: attr(data-placeholder);
+  opacity: .65;
+  font-style: italic;
+}
+.case-pull[data-copy-field]:not(:empty)::before { content: '“'; }
+.case-pull[data-copy-field]:not(:empty)::after { content: '”'; }

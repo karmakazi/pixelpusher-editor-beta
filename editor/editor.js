@@ -1,7 +1,7 @@
 'use strict';
 
 const projectSelect = document.querySelector('#project');
-const fieldSelect = document.querySelector('#field');
+const selectionLabel = document.querySelector('#selection');
 const changeSummary = document.querySelector('#changes');
 const original = document.querySelector('#original');
 const draft = document.querySelector('#draft');
@@ -98,48 +98,63 @@ checkSession('GET').catch(() => {
   sessionStatus.textContent = 'Could not check sign-in. Try signing in.';
 });
 
-for (const [field, definition] of Object.entries(CaseCopy.fields)) {
-  fieldSelect.add(new Option(definition.label, field));
+let selection = { field: 'tagline', paragraph: null };
+
+function selectedText(value) {
+  return selection.paragraph === null ? value : value.split('\n\n')[selection.paragraph] ?? '';
 }
-fieldSelect.value = 'tagline';
+
+function selectionKey() {
+  return selection.paragraph === null ? selection.field : `copy:${selection.paragraph}`;
+}
+
+function validEdit(field, value) {
+  return CaseCopy.valid(field, value) &&
+    (field !== 'copy' || value.split('\n\n').every(paragraph => paragraph.trim()));
+}
 
 function matches(project, values) {
   return project && values && Object.entries(values)
     .every(([field, value]) => CaseCopy.read(project, field) === value);
 }
 
-function updateDraft() {
-  const field = fieldSelect.value;
+function updateDraft(inline = false) {
+  const { field, paragraph } = selection;
   const definition = CaseCopy.fields[field];
   const entries = Object.entries(edits);
-  const invalid = entries.some(([key, value]) => !CaseCopy.valid(key, value));
-  const rule = field === 'copy' ? 'Separate paragraphs with a blank line.' :
-    definition.list ? 'Enter one item per line.' : 'Use a single line.';
+  const invalid = entries.some(([key, value]) => !validEdit(key, value));
+  const rule = paragraph !== null ? '' :
+    definition.list ? 'Enter one item per line.' : '';
   document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
-  draft.setAttribute('aria-invalid', String(!CaseCopy.valid(field, draft.value)));
-  changeSummary.textContent = invalid ? 'Check the length and line breaks in your edited copy.' :
+  draft.setAttribute('aria-invalid', String(!validEdit(field, edits[field] ?? CaseCopy.read(selected, field))));
+  changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
     [rule, entries.length ? `Edited: ${entries.map(([key]) => CaseCopy.fields[key].label).join(', ')}.` : ''].join(' ').trim();
   publish.disabled = releasing || pending || !entries.length || invalid;
   undo.disabled = releasing || pending || Boolean(entries.length) ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
   reset.disabled = releasing || !entries.length;
-  restoreDraft.hidden = !previousDrafts.has(field);
+  restoreDraft.hidden = !previousDrafts.has(selectionKey());
   restoreDraft.disabled = releasing || pending;
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-copy-preview',
     projectId: selected.id,
+    selection,
+    locked: releasing,
+    inline,
     values: {
       ...awaitingDeployment.get(selected.id),
-      ...Object.fromEntries(entries.filter(([key, value]) => CaseCopy.valid(key, value))),
+      ...Object.fromEntries(entries.filter(([key, value]) => validEdit(key, value))),
     },
   }, location.origin);
 }
 
 function showField() {
-  const field = fieldSelect.value;
-  original.textContent = CaseCopy.read(selected, field);
+  const { field, paragraph } = selection;
+  const baseline = CaseCopy.read(selected, field);
+  selectionLabel.textContent = paragraph === null ? CaseCopy.fields[field].label : `Body paragraph ${paragraph + 1}`;
+  original.textContent = selectedText(baseline);
   draft.maxLength = CaseCopy.fields[field].max;
-  draft.value = edits[field] ?? original.textContent;
+  draft.value = selectedText(edits[field] ?? baseline);
   draft.disabled = releasing;
   status.textContent = '';
   updateDraft();
@@ -151,21 +166,50 @@ function selectProject() {
   edits = {};
   previousDrafts.clear();
   instruction.value = '';
-  fieldSelect.value = 'tagline';
+  selection = { field: 'tagline', paragraph: null };
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
   preview.src = `/?editor-preview=1#/work/${encodeURIComponent(selected.id)}`;
   showField();
 }
 
-function editField() {
+function editField(inline = false) {
   revision++;
-  const field = fieldSelect.value;
-  const value = CaseCopy.normalize(field, draft.value);
-  if (value === CaseCopy.read(selected, field)) delete edits[field];
+  const { field, paragraph } = selection;
+  const baseline = CaseCopy.read(selected, field);
+  let value = draft.value;
+  if (paragraph !== null) {
+    const paragraphs = (edits[field] ?? baseline).split('\n\n');
+    value = value.replace(/\s*\r?\n\s*/g, ' ');
+    paragraphs[paragraph] = value.trim();
+    value = paragraphs.join('\n\n');
+  } else {
+    if (!CaseCopy.fields[field].list) value = value.replace(/\s*\r?\n\s*/g, ' ');
+    value = CaseCopy.normalize(field, value);
+  }
+  if (value === baseline) delete edits[field];
   else edits[field] = value;
-  updateDraft();
+  updateDraft(inline);
 }
+
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing) return;
+  const { type, projectId, field, paragraph, value } = event.data || {};
+  if (projectId !== selected.id || !Object.hasOwn(CaseCopy.fields, field)) return;
+  if (field === 'copy' ? !Number.isInteger(paragraph) || paragraph < 0 ||
+    paragraph >= (edits.copy ?? CaseCopy.read(selected, 'copy')).split('\n\n').length : paragraph !== null) return;
+  if (type !== 'pixelpusher-copy-select' && type !== 'pixelpusher-copy-input') return;
+  if (selection.field !== field || selection.paragraph !== paragraph) {
+    revision++;
+    selection = { field, paragraph };
+    instruction.value = '';
+    showField();
+  }
+  if (type === 'pixelpusher-copy-input' && typeof value === 'string') {
+    draft.value = value;
+    editField(true);
+  }
+});
 
 preview.addEventListener('load', () => { if (selected) updateDraft(); });
 projectSelect.addEventListener('change', () => {
@@ -175,13 +219,8 @@ projectSelect.addEventListener('change', () => {
   }
   selectProject();
 });
-fieldSelect.addEventListener('change', () => {
-  revision++;
-  instruction.value = '';
-  showField();
-});
 instruction.addEventListener('input', () => { revision++; });
-draft.addEventListener('input', editField);
+draft.addEventListener('input', () => editField());
 reset.addEventListener('click', () => {
   revision++;
   edits = {};
@@ -191,10 +230,10 @@ reset.addEventListener('click', () => {
   status.textContent = 'Draft reset.';
 });
 restoreDraft.addEventListener('click', () => {
-  const field = fieldSelect.value;
-  if (!previousDrafts.has(field)) return;
-  draft.value = previousDrafts.get(field);
-  previousDrafts.delete(field);
+  const key = selectionKey();
+  if (!previousDrafts.has(key)) return;
+  draft.value = previousDrafts.get(key);
+  previousDrafts.delete(key);
   editField();
   status.textContent = 'Previous draft restored.';
 });
@@ -208,9 +247,9 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
   event.preventDefault();
   if (pending || releasing || !selected) return;
   const requestedRevision = revision;
-  const field = fieldSelect.value;
+  const { field, paragraph } = selection;
   const current = draft.value;
-  const originalCopy = CaseCopy.read(selected, field);
+  const originalCopy = selectedText(CaseCopy.read(selected, field));
   pending = true;
   generate.disabled = signOut.disabled = true;
   updateDraft();
@@ -219,7 +258,7 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
     const response = await fetch('/api/draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId: selected.id, field, current, originalCopy, instruction: instruction.value }),
+      body: JSON.stringify({ projectId: selected.id, field, paragraph, current, originalCopy, instruction: instruction.value }),
     });
     if (response.status === 401) return sessionExpired();
     const proposal = await response.json();
@@ -229,7 +268,7 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
     }
     if (!response.ok) throw new Error(proposal.error);
     if (proposal.value !== null && proposal.value !== current) {
-      previousDrafts.set(field, current);
+      previousDrafts.set(selectionKey(), current);
       draft.value = proposal.value;
       editField();
     }
@@ -267,7 +306,7 @@ async function release(isUndo) {
   if (!changes || !Object.keys(changes).length) return;
   const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
   releasing = true;
-  projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = reset.disabled = signOut.disabled = true;
+  projectSelect.disabled = draft.disabled = generate.disabled = reset.disabled = signOut.disabled = true;
   updateDraft();
   commitLink.hidden = liveLink.hidden = true;
   releaseStatus.textContent = isUndo ? 'Restoring the previous copy…' : 'Publishing to GitHub…';
@@ -305,7 +344,7 @@ async function release(isUndo) {
 
     if (await verifyRelease(project.id, expectedOnSite)) {
       awaitingDeployment.delete(project.id);
-      preview.src = `/?editor-preview=1&release=${result.commit}#/work/${encodeURIComponent(project.id)}`;
+      preview.src = `/?editor-preview=1&release=${result.commit}&refresh=${Date.now()}#/work/${encodeURIComponent(project.id)}`;
       releaseStatus.textContent = isUndo ? 'Previous copy restored on the beta site.' : 'Published on the beta site.';
       liveLink.href = `/#/work/${encodeURIComponent(project.id)}`;
       liveLink.hidden = false;
@@ -318,7 +357,7 @@ async function release(isUndo) {
       : error.message;
   } finally {
     releasing = false;
-    projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = signOut.disabled = false;
+    projectSelect.disabled = draft.disabled = generate.disabled = signOut.disabled = false;
     updateDraft();
   }
 }
@@ -337,7 +376,7 @@ fetch('/projects.json')
       projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
     if (!projectSelect.options.length) throw new Error('No case studies available.');
-    projectSelect.disabled = fieldSelect.disabled = false;
+    projectSelect.disabled = false;
     generate.disabled = false;
     selectProject();
   })

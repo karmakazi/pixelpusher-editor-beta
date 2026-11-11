@@ -25,11 +25,11 @@
       <h1 id="heading">Edit a case study</h1>
       <label for="project">Project</label>
       <select id="project" disabled></select>
-      <label for="field">Copy to edit</label>
-      <select id="field" disabled></select>
+      <p class="hint">Click text in the preview to select and edit it.</p>
+      <h2 id="selection">Intro</h2>
       <form id="assistant">
         <label for="instruction">What should change?</label>
-        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Revise the draft, for example: Make it shorter."></textarea>
+        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Revise the selected copy, for example: Make it shorter."></textarea>
 
         <button id="generate" disabled>Draft with AI</button>
       </form>
