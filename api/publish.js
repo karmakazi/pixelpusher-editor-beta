@@ -62,8 +62,9 @@ module.exports = async function publish(req, res) {
     const source = Buffer.from(file.content, 'base64').toString('utf8');
     const projects = JSON.parse(source);
     const index = projects.findIndex(item => item.id === projectId && !item.comingSoon);
-    if (index < 0 || entries.some(([field]) => CaseCopy.read(projects[index], field) !== baseline[field])) {
-      return res.status(409).json({ error: 'This copy changed in GitHub. Wait for the latest deployment and reload before editing it.' });
+    if (index < 0 || entries.some(([field]) => !CaseCopy.hasField(projects[index], field) ||
+      CaseCopy.read(projects[index], field) !== baseline[field])) {
+      return res.status(409).json({ error: 'This case study changed in GitHub. Wait for the latest deployment and reload before editing it.' });
     }
     const updated = replaceCopy(source, projects, index, changes);
     const saved = await fetch(contentsUrl, {
@@ -74,7 +75,7 @@ module.exports = async function publish(req, res) {
         branch,
         sha: file.sha,
         content: Buffer.from(updated).toString('base64'),
-        message: `${undo === true ? 'Restore' : 'Update'} case study copy: ${projectId}`,
+        message: `${undo === true ? 'Restore' : 'Update'} case study content: ${projectId}`,
       }),
     });
     if (saved.status === 409) {

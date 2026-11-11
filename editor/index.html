@@ -25,13 +25,24 @@
       <h1 id="heading">Edit a case study</h1>
       <label for="project">Project</label>
       <select id="project" disabled></select>
-      <p class="hint">Click text in the preview to edit it or ask AI.</p>
+      <p class="hint">Click text or an image in the preview to edit it.</p>
       <h2 id="selection">Intro</h2>
-      <p id="status" role="status"></p>
-      <div class="original"><h2>Published copy</h2><p id="original"></p></div>
-      <label for="draft">Draft copy <small id="count"></small></label>
-      <textarea id="draft" rows="4" disabled></textarea>
-      <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
+      <div id="copy-controls">
+        <p id="status" role="status"></p>
+        <div class="original"><h2>Published copy</h2><p id="original"></p></div>
+        <label for="draft">Draft copy <small id="count"></small></label>
+        <textarea id="draft" rows="4" disabled></textarea>
+        <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
+      </div>
+      <form id="image-controls" hidden>
+        <label for="image-url">Image URL</label>
+        <input id="image-url" type="text" maxlength="2048" placeholder="https://… or /img/example.png">
+        <label for="image-alt">Alt text</label>
+        <input id="image-alt" type="text" maxlength="300" placeholder="Describe what’s in the image">
+        <p class="hint">Use a direct HTTPS image link or a file already in the site’s img folder. Leave the URL blank to use the original fallback image.</p>
+        <button id="preview-image" type="submit">Preview image</button>
+        <p id="image-status" role="status"></p>
+      </form>
       <p id="changes" role="status"></p>
       <div class="actions">
         <button id="publish" disabled>Publish to beta</button>

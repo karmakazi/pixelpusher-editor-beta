@@ -3,6 +3,12 @@
 const projectSelect = document.querySelector('#project');
 const selectionLabel = document.querySelector('#selection');
 const changeSummary = document.querySelector('#changes');
+const copyControls = document.querySelector('#copy-controls');
+const imageControls = document.querySelector('#image-controls');
+const imageUrl = document.querySelector('#image-url');
+const imageAlt = document.querySelector('#image-alt');
+const imageStatus = document.querySelector('#image-status');
+const previewImage = document.querySelector('#preview-image');
 const original = document.querySelector('#original');
 const draft = document.querySelector('#draft');
 const access = document.querySelector('#access');
@@ -99,6 +105,7 @@ checkSession('GET').catch(() => {
 });
 
 let selection = { field: 'tagline', paragraph: null };
+let imageSelection = null;
 
 function selectedText(value) {
   return selection.paragraph === null ? value : value.split('\n\n')[selection.paragraph] ?? '';
@@ -128,7 +135,7 @@ function updateDraft(inline = false) {
   document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
   draft.setAttribute('aria-invalid', String(!validEdit(field, edits[field] ?? CaseCopy.read(selected, field))));
   changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
-    [rule, entries.length ? `Edited: ${entries.map(([key]) => CaseCopy.fields[key].label).join(', ')}.` : ''].join(' ').trim();
+    [rule, entries.length ? `Edited: ${entries.map(([key]) => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
   publish.disabled = releasing || pending || suggestion !== null || !entries.length || invalid;
   undo.disabled = releasing || pending || suggestion !== null || Boolean(entries.length) ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
@@ -138,7 +145,8 @@ function updateDraft(inline = false) {
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-copy-preview',
     projectId: selected.id,
-    selection,
+    selection: imageSelection ? null : selection,
+    image: imageSelection,
     locked: releasing,
     inline,
     ai: { pending, suggested: suggestion !== null, note: aiNote },
@@ -151,6 +159,21 @@ function updateDraft(inline = false) {
 }
 
 function showField() {
+  copyControls.hidden = Boolean(imageSelection);
+  imageControls.hidden = !imageSelection;
+  if (imageSelection) {
+    selectionLabel.textContent = imageSelection === 'hero' ? 'Hero image' :
+      `Gallery image ${Number(imageSelection.split(':')[1]) + 1}`;
+    for (const [name, input] of [['url', imageUrl], ['alt', imageAlt]]) {
+      const field = `${imageSelection}:${name}`;
+      input.value = edits[field] ?? CaseCopy.read(selected, field);
+      input.disabled = releasing;
+    }
+    previewImage.disabled = releasing;
+    imageStatus.textContent = '';
+    updateDraft();
+    return;
+  }
   const { field, paragraph } = selection;
   const baseline = CaseCopy.read(selected, field);
   selectionLabel.textContent = paragraph === null ? CaseCopy.fields[field].label : `Body paragraph ${paragraph + 1}`;
@@ -170,6 +193,7 @@ function selectProject() {
   suggestion = null;
   aiNote = '';
   selection = { field: 'tagline', paragraph: null };
+  imageSelection = null;
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
   preview.src = `/?editor-preview=1#/work/${encodeURIComponent(selected.id)}`;
@@ -205,12 +229,23 @@ function editField(inline = false) {
 
 window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing) return;
-  const { type, projectId, field, paragraph, value } = event.data || {};
-  if (projectId !== selected.id || !Object.hasOwn(CaseCopy.fields, field)) return;
+  const { type, projectId, field, paragraph, value, image } = event.data || {};
+  if (projectId !== selected.id) return;
+  if (type === 'pixelpusher-image-select') {
+    if (typeof image !== 'string' || !CaseCopy.hasField(selected, `${image}:url`)) return;
+    if (imageSelection === image) return;
+    revision++;
+    suggestion = null;
+    aiNote = '';
+    imageSelection = image;
+    showField();
+    return;
+  }
+  if (!Object.hasOwn(CaseCopy.fields, field)) return;
   if (field === 'copy' ? !Number.isInteger(paragraph) || paragraph < 0 ||
     paragraph >= (edits.copy ?? CaseCopy.read(selected, 'copy')).split('\n\n').length : paragraph !== null) return;
   if (['pixelpusher-ai-request', 'pixelpusher-ai-keep', 'pixelpusher-ai-discard'].includes(type)) {
-    if (selection.field !== field || selection.paragraph !== paragraph) return;
+    if (imageSelection || selection.field !== field || selection.paragraph !== paragraph) return;
     if (type === 'pixelpusher-ai-request' && typeof value === 'string') requestDraft(value);
     if (type === 'pixelpusher-ai-keep' && suggestion !== null) {
       previousDrafts.set(selectionKey(), draft.value);
@@ -227,8 +262,9 @@ window.addEventListener('message', event => {
     return;
   }
   if (type !== 'pixelpusher-copy-select' && type !== 'pixelpusher-copy-input') return;
-  if (selection.field !== field || selection.paragraph !== paragraph) {
+  if (imageSelection || selection.field !== field || selection.paragraph !== paragraph) {
     revision++;
+    imageSelection = null;
     selection = { field, paragraph };
     suggestion = null;
     aiNote = '';
@@ -239,6 +275,45 @@ window.addEventListener('message', event => {
     editField(true);
   }
 });
+
+imageControls.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (releasing || !imageSelection) return;
+  const key = imageSelection;
+  const project = selected;
+  const url = imageUrl.value.trim();
+  const alt = imageAlt.value.trim();
+  if (!CaseCopy.valid(`${key}:url`, url) || !CaseCopy.valid(`${key}:alt`, alt)) {
+    imageStatus.textContent = 'Enter a direct HTTPS image URL or a file path in /img.';
+    return;
+  }
+  const requestedRevision = ++revision;
+  const currentUrl = edits[`${key}:url`] ?? CaseCopy.read(project, `${key}:url`);
+  if (url && url !== currentUrl) {
+    imageStatus.textContent = 'Checking image…';
+    const candidate = new Image();
+    candidate.src = url;
+    try {
+      await Promise.race([
+        candidate.decode(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Image load timed out')), 8000)),
+      ]);
+    } catch {
+      if (revision === requestedRevision) imageStatus.textContent = 'This image could not be loaded. Check the URL and try again.';
+      return;
+    }
+  }
+  if (revision !== requestedRevision || releasing || selected !== project || imageSelection !== key) return;
+  for (const [name, value] of [['url', url], ['alt', alt]]) {
+    const field = `${key}:${name}`;
+    if (value === CaseCopy.read(project, field)) delete edits[field];
+    else edits[field] = value;
+  }
+  updateDraft();
+  imageStatus.textContent = 'Image preview updated.';
+});
+
+imageControls.addEventListener('input', () => { revision++; });
 
 preview.addEventListener('load', () => { if (selected) updateDraft(); });
 projectSelect.addEventListener('change', () => {
@@ -334,6 +409,7 @@ async function release(isUndo) {
   const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
   releasing = true;
   projectSelect.disabled = draft.disabled = reset.disabled = signOut.disabled = true;
+  imageUrl.disabled = imageAlt.disabled = previewImage.disabled = true;
   updateDraft();
   commitLink.hidden = liveLink.hidden = true;
   releaseStatus.textContent = isUndo ? 'Restoring the previous copy…' : 'Publishing to GitHub…';
@@ -386,6 +462,7 @@ async function release(isUndo) {
   } finally {
     releasing = false;
     projectSelect.disabled = draft.disabled = signOut.disabled = false;
+    imageUrl.disabled = imageAlt.disabled = previewImage.disabled = false;
     updateDraft();
   }
 }

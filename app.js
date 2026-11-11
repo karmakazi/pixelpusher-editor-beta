@@ -13,12 +13,12 @@ if (editorPreview) {
   refreshCopyAI = setupCopyAI();
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
-    const { type, projectId, values, selection, locked, inline, ai } = event.data || {};
+    const { type, projectId, values, selection, locked, inline, ai, image } = event.data || {};
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
         !Object.entries(values).every(([field, value]) => CaseCopy.valid(field, value))) return;
     const changed = casePreview?.projectId !== projectId || JSON.stringify(casePreview.values) !== JSON.stringify(values);
-    casePreview = { projectId, values, selection, locked, ai };
+    casePreview = { projectId, values, selection, locked, ai, image };
     if (currentView !== `case:${projectId}`) return;
     if (changed && !(inline && document.activeElement?.matches('[data-copy-field]'))) {
       renderCase(projectId, true);
@@ -40,7 +40,34 @@ if (editorPreview) {
 
   document.addEventListener('click', event => {
     if (event.target.closest('a')) event.preventDefault();
+    const image = event.target.closest('[data-edit-image]');
+    if (image) selectPreviewImage(image);
   });
+  document.addEventListener('keydown', event => {
+    const image = event.target.closest('[data-edit-image]');
+    if (image?.tagName === 'IMG' && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      selectPreviewImage(image);
+    }
+  });
+}
+
+function selectPreviewImage(image) {
+  if (casePreview?.locked) return;
+  window.parent.postMessage({
+    type: 'pixelpusher-image-select',
+    projectId: currentView.slice(5),
+    image: image.dataset.editImage,
+  }, location.origin);
+}
+
+function editableImage(key, label) {
+  return editorPreview ? ` data-edit-image="${key}" role="button" tabindex="0" aria-label="${label}"` : '';
+}
+
+function galleryImage(asset, index) {
+  const src = asset.src || galleryUrl(asset.seed, asset.wide);
+  return `<img src="${CaseCopy.escape(src)}" alt="${asset.alt}" loading="lazy"${editableImage(`gallery:${index}`, `Edit gallery image ${index + 1}`)} />`;
 }
 
 function editableCopy(field, paragraph) {
@@ -57,6 +84,10 @@ function syncEditableCopy() {
     node.classList.toggle('copy-selected', selection?.field === node.dataset.copyField && selection.paragraph === paragraph);
     const reviewing = casePreview?.ai?.suggested && node.classList.contains('copy-selected');
     node.contentEditable = casePreview?.locked || reviewing ? 'false' : 'plaintext-only';
+  }
+  for (const node of document.querySelectorAll('[data-edit-image]')) {
+    node.classList.toggle('image-selected', node.dataset.editImage === casePreview?.image);
+    node.setAttribute('aria-disabled', String(Boolean(casePreview?.locked)));
   }
   refreshCopyAI?.();
 }
@@ -117,7 +148,7 @@ function setupCopyAI() {
     const rect = node.getBoundingClientRect();
     const narrow = window.innerWidth < 520;
     const state = casePreview?.ai || {};
-    toolbar.hidden = Boolean(casePreview?.locked) ||
+    toolbar.hidden = Boolean(casePreview?.locked || casePreview?.image) ||
       ((!open || !narrow) && (rect.bottom < 0 || rect.top > window.innerHeight));
     if (toolbar.hidden) return;
 
@@ -309,7 +340,7 @@ function workCard(p, isHome, eager, delay) {
 
   return `
     <${tag} ${href} class="${classes}">
-      <img src="${p.heroImg || thumbUrl(p.thumbSeed, wide)}" alt="${p.client} \u2014 ${p.title}" loading="${loading}" />
+      <img src="${CaseCopy.escape(p.heroImg || thumbUrl(p.thumbSeed, wide))}" alt="${p.client} \u2014 ${p.title}" loading="${loading}" />
       <div class="work-caption">
         <p class="work-client">${p.client}</p>
         <p class="work-title">${p.title}</p>
@@ -658,7 +689,7 @@ function renderCase(id, preserveScroll = false) {
       } else {
         galleryBlocks.push(`
       <div class="case-gallery-wide r">
-        <img src="${galleryUrl(g.seed, true)}" alt="${g.alt}" loading="lazy" />
+        ${galleryImage(g, i)}
       </div>`);
       }
     } else {
@@ -668,10 +699,10 @@ function renderCase(id, preserveScroll = false) {
         galleryBlocks.push(`
       <div class="case-gallery-pair">
         <div class="case-gallery-half r d1">
-          <img src="${galleryUrl(g.seed, false)}" alt="${g.alt}" loading="lazy" />
+          ${galleryImage(g, i)}
         </div>
         <div class="case-gallery-half r d2">
-          <img src="${galleryUrl(n.seed, false)}" alt="${n.alt}" loading="lazy" />
+          ${galleryImage(n, i + 1)}
         </div>
       </div>`);
         i++; // consumed next item
@@ -679,7 +710,7 @@ function renderCase(id, preserveScroll = false) {
         galleryBlocks.push(`
       <div class="case-gallery-pair">
         <div class="case-gallery-half r">
-          <img src="${galleryUrl(g.seed, false)}" alt="${g.alt}" loading="lazy" />
+          ${galleryImage(g, i)}
         </div>
       </div>`);
       }
@@ -716,8 +747,9 @@ function renderCase(id, preserveScroll = false) {
 
     <section class="case-hero">
       <div class="case-hero-img">
-        <img src="${p.heroImg || heroUrl(p.heroSeed)}" alt="${p.client} \u2014 ${p.title}" />
+        <img src="${CaseCopy.escape(p.heroImg || heroUrl(p.heroSeed))}" alt="${p.heroAlt ? CaseCopy.escape(p.heroAlt) : `${p.client} \u2014 ${p.title}`}"${editorPreview ? ' data-edit-image="hero"' : ''} />
       </div>
+      ${editorPreview ? '<button class="edit-hero-image" type="button" data-edit-image="hero">Edit hero image</button>' : ''}
       <p class="case-eyebrow"${editableCopy('client')}>${p.client}</p>
       <h1 class="case-h1"${editableCopy('title')}>${h1Html}</h1>
       <p class="case-tagline"${editableCopy('tagline')}></p>

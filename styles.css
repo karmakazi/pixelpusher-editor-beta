@@ -998,3 +998,24 @@ footer a:hover { color: var(--off-white); }
   width: auto;
 }
 .copy-ai.copy-ai-docked form { width: 100%; }
+
+.editor-preview [data-edit-image] { cursor: pointer !important; }
+.editor-preview .case-hero-img [data-edit-image] { pointer-events: auto; }
+.editor-preview [data-edit-image]:hover,
+.editor-preview [data-edit-image]:focus-visible,
+.editor-preview [data-edit-image].image-selected {
+  outline: 2px solid #d9f36c;
+  outline-offset: -3px;
+}
+.editor-preview .case-hero > .edit-hero-image {
+  position: absolute;
+  z-index: 2;
+  top: 5.5rem;
+  right: var(--gutter);
+  border: 1px solid #d9f36c;
+  border-radius: 5px;
+  padding: 7px 10px;
+  color: #171a0b;
+  background: #d9f36c;
+  font: 650 14px/1.4 system-ui, sans-serif;
+}
