@@ -5,8 +5,9 @@ header { display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid
 header strong { letter-spacing: -.045em; font-size: 1.2rem; }
 header span, .hint { color: #afafa9; }
 header a { margin-left: auto; color: inherit; }
-main { display: grid; grid-template-columns: minmax(19rem, 24rem) minmax(0, 1fr); }
-.controls { padding: 1.5rem; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem); }
+[hidden] { display: none !important; }
+.controls { grid-area: 1 / 2; padding: 1.5rem; border-left: 1px solid #373737; }
 h1 { font-size: 1.75rem; letter-spacing: -.04em; margin: 0 0 1.3rem; }
 h2, label { font-size: .85rem; font-weight: 650; }
 label { display: flex; justify-content: space-between; margin: 1rem 0 .35rem; }
@@ -21,11 +22,20 @@ button:disabled { opacity: .5; cursor: default; }
 .original { padding-top: .5rem; border-top: 1px solid #373737; }
 .original p { color: #c7c7bf; }
 .actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .7rem; }
-.preview { background: #212121; border-left: 1px solid #373737; min-height: calc(100vh - 58px); display: flex; flex-direction: column; align-items: center; }
+.preview { grid-area: 1 / 1; position: sticky; top: 0; align-self: start; height: calc(100vh - 58px); background: #212121; display: flex; flex-direction: column; align-items: center; }
 .preview-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: .65rem 1rem; font-size: .85rem; }
 iframe { width: 100%; flex: 1; min-height: 32rem; border: 0; background: #111; }
 iframe.mobile { width: min(100%, 390px); }
-@media (max-width: 740px) { main { grid-template-columns: 1fr; } .preview { min-height: 36rem; border-left: 0; border-top: 1px solid #373737; } }
+@media (max-width: 740px) {
+  main { grid-template-columns: 1fr; }
+  .controls, .preview { grid-area: auto; }
+  .controls { border-left: 0; }
+  .preview { position: static; height: 36rem; border-top: 1px solid #373737; }
+}
+.sign-in { max-width: 24rem; margin: 4rem auto 0; padding: 1.5rem; }
+#login-button { margin-top: 1rem; }
+#session-status { padding: 0 1.5rem; text-align: center; }
+#session-status:empty { display: none; }
 #release-status { font-size: .85rem; line-height: 1.5; }
 #commit, #live { color: #d9f36c; font-size: .82rem; margin-right: .8rem; }
 #original { white-space: pre-wrap; max-height: 12rem; overflow: auto; }

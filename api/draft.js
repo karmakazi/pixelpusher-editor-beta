@@ -1,4 +1,4 @@
-const { timingSafeEqual } = require('node:crypto');
+const { isSignedIn } = require('../lib/editor-session');
 const CaseCopy = require('../editor/case-copy');
 const projects = require('../projects.json');
 
@@ -14,12 +14,9 @@ module.exports = async function draft(req, res) {
     return res.status(503).json({ error: 'AI drafting needs server configuration.' });
   }
 
-  const supplied = Buffer.from(req.headers.authorization || '');
-  const expected = Buffer.from(`Bearer ${EDITOR_ACCESS_TOKEN}`);
-  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-    return res.status(401).json({ error: 'Enter the editor access code to use AI drafting.' });
+  if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
+    return res.status(401).json({ error: 'Sign in to continue.' });
   }
-
   const { projectId, instruction, field = 'tagline', current } = req.body || {};
   const legacy = req.body?.field === undefined;
   const project = projects.find(item => item.id === projectId && !item.comingSoon);

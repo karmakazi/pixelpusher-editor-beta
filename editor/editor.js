@@ -7,6 +7,11 @@ const original = document.querySelector('#original');
 const draft = document.querySelector('#draft');
 const instruction = document.querySelector('#instruction');
 const access = document.querySelector('#access');
+const login = document.querySelector('#login');
+const loginButton = document.querySelector('#login-button');
+const signOut = document.querySelector('#sign-out');
+const sessionStatus = document.querySelector('#session-status');
+const workspace = document.querySelector('#workspace');
 const status = document.querySelector('#status');
 const preview = document.querySelector('#preview');
 const generate = document.querySelector('#generate');
@@ -25,6 +30,7 @@ let revision = 0;
 let pending = false;
 let releasing = false;
 const lastRelease = new Map();
+const awaitingDeployment = new Map();
 try {
   for (const [id, release] of JSON.parse(sessionStorage.getItem('pixelpusher-releases') || '[]')) {
     lastRelease.set(id, typeof release.previous === 'string'
@@ -34,6 +40,61 @@ try {
 } catch {
   // Continue when session storage is unavailable.
 }
+
+function showSession(signedIn) {
+  document.querySelector('#sign-in').hidden = signedIn;
+  workspace.hidden = !signedIn;
+  signOut.hidden = !signedIn;
+  if (!signedIn) access.focus();
+}
+
+async function checkSession(method, password) {
+  const options = { method };
+  if (method === 'POST') {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify({ password });
+  }
+  const response = await fetch('/api/session', options);
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error);
+  showSession(result.signedIn);
+  sessionStatus.textContent = '';
+}
+
+login.addEventListener('submit', async event => {
+  event.preventDefault();
+  loginButton.disabled = true;
+  try {
+    await checkSession('POST', access.value);
+    access.value = '';
+  } catch (error) {
+    sessionStatus.textContent = error.message || 'Could not sign in.';
+  } finally {
+    loginButton.disabled = false;
+  }
+});
+
+signOut.addEventListener('click', async () => {
+  if (pending || releasing) return;
+  signOut.disabled = true;
+  try {
+    await checkSession('DELETE');
+  } catch {
+    sessionStatus.textContent = 'Could not sign out. Try again.';
+  } finally {
+    signOut.disabled = false;
+  }
+});
+
+function sessionExpired() {
+  showSession(false);
+  sessionStatus.textContent = 'Your session ended. Sign in to continue with your draft.';
+}
+
+checkSession('GET').catch(() => {
+  showSession(false);
+  sessionStatus.textContent = 'Could not check sign-in. Try signing in.';
+});
 
 for (const [field, definition] of Object.entries(CaseCopy.fields)) {
   fieldSelect.add(new Option(definition.label, field));
@@ -63,7 +124,10 @@ function updateDraft() {
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-copy-preview',
     projectId: selected.id,
-    values: Object.fromEntries(entries.filter(([key, value]) => CaseCopy.valid(key, value))),
+    values: {
+      ...awaitingDeployment.get(selected.id),
+      ...Object.fromEntries(entries.filter(([key, value]) => CaseCopy.valid(key, value))),
+    },
   }, location.origin);
 }
 
@@ -72,7 +136,7 @@ function showField() {
   original.textContent = CaseCopy.read(selected, field);
   draft.maxLength = CaseCopy.fields[field].max;
   draft.value = edits[field] ?? original.textContent;
-  draft.disabled = false;
+  draft.disabled = releasing;
   status.textContent = '';
   updateDraft();
 }
@@ -121,25 +185,18 @@ mobile.addEventListener('click', () => {
 document.querySelector('#assistant').addEventListener('submit', async event => {
   event.preventDefault();
   if (pending || releasing || !selected) return;
-  if (!access.value) {
-    status.textContent = 'Enter the editor access code.';
-    access.focus();
-    return;
-  }
   const requestedRevision = revision;
   pending = true;
-  generate.disabled = true;
+  generate.disabled = signOut.disabled = true;
   updateDraft();
   status.textContent = 'Drafting…';
   try {
     const response = await fetch('/api/draft', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${access.value}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId: selected.id, field: fieldSelect.value, current: draft.value, instruction: instruction.value }),
     });
+    if (response.status === 401) return sessionExpired();
     const proposal = await response.json();
     if (!response.ok) throw new Error(proposal.error);
     if (revision !== requestedRevision) {
@@ -157,7 +214,7 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
       : error.message;
   } finally {
     pending = false;
-    generate.disabled = false;
+    generate.disabled = signOut.disabled = false;
     updateDraft();
   }
 });
@@ -178,17 +235,12 @@ async function verifyRelease(projectId, changes) {
 
 async function release(isUndo) {
   if (releasing || pending || !selected) return;
-  if (!access.value) {
-    releaseStatus.textContent = 'Enter the editor access code.';
-    access.focus();
-    return;
-  }
   const project = selected;
   const changes = isUndo ? lastRelease.get(project.id)?.previous : { ...edits };
   if (!changes || !Object.keys(changes).length) return;
   const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
   releasing = true;
-  projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = reset.disabled = true;
+  projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = reset.disabled = signOut.disabled = true;
   updateDraft();
   commitLink.hidden = liveLink.hidden = true;
   releaseStatus.textContent = isUndo ? 'Restoring the previous copy…' : 'Publishing to GitHub…';
@@ -196,12 +248,10 @@ async function release(isUndo) {
   try {
     const response = await fetch('/api/publish', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${access.value}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId: project.id, previous, changes, undo: isUndo }),
     });
+    if (response.status === 401) return sessionExpired();
     const result = await response.json();
     if (!response.ok) throw new Error(result.error);
 
@@ -212,18 +262,21 @@ async function release(isUndo) {
     } catch {
       // Undo remains available in the current page.
     }
-    edits = changes;
+    const expectedOnSite = { ...awaitingDeployment.get(project.id), ...changes };
+    awaitingDeployment.set(project.id, expectedOnSite);
+    Object.assign(project, CaseCopy.apply(project, changes));
+    projectSelect.selectedOptions[0].textContent =
+      `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`;
+    edits = {};
+    if (isUndo) instruction.value = '';
+    showField();
     commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${result.commit}`;
     commitLink.hidden = false;
     releaseStatus.textContent = 'Saved to GitHub. Waiting for Vercel…';
     updateDraft();
 
-    if (await verifyRelease(project.id, changes)) {
-      Object.assign(project, CaseCopy.apply(project, changes));
-      projectSelect.selectedOptions[0].textContent =
-        `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`;
-      edits = {};
-      showField();
+    if (await verifyRelease(project.id, expectedOnSite)) {
+      awaitingDeployment.delete(project.id);
       preview.src = `/?editor-preview=1&release=${result.commit}#/work/${encodeURIComponent(project.id)}`;
       releaseStatus.textContent = isUndo ? 'Previous copy restored on the beta site.' : 'Published on the beta site.';
       liveLink.href = `/#/work/${encodeURIComponent(project.id)}`;
@@ -237,7 +290,7 @@ async function release(isUndo) {
       : error.message;
   } finally {
     releasing = false;
-    projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = false;
+    projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = signOut.disabled = false;
     updateDraft();
   }
 }

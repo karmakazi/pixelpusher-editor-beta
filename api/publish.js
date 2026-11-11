@@ -1,4 +1,4 @@
-const { timingSafeEqual } = require('node:crypto');
+const { isSignedIn } = require('../lib/editor-session');
 const CaseCopy = require('../editor/case-copy');
 
 const repo = 'karmakazi/pixelpusher-editor-beta';
@@ -33,10 +33,8 @@ module.exports = async function publish(req, res) {
   if (!EDITOR_ACCESS_TOKEN || !GITHUB_PUBLISH_TOKEN) {
     return res.status(503).json({ error: 'Publishing needs EDITOR_ACCESS_TOKEN and GITHUB_PUBLISH_TOKEN in Vercel.' });
   }
-  const supplied = Buffer.from(req.headers.authorization || '');
-  const expected = Buffer.from(`Bearer ${EDITOR_ACCESS_TOKEN}`);
-  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-    return res.status(401).json({ error: 'Enter the editor access code to publish.' });
+  if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
+    return res.status(401).json({ error: 'Sign in to continue.' });
   }
   const { projectId, previous, tagline, undo } = req.body || {};
   const changes = req.body?.changes ?? { tagline };
