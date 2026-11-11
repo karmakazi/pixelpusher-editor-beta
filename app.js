@@ -8,6 +8,7 @@ let casePreview = null;
 const editorPreview = window.parent !== window && new URLSearchParams(location.search).has('editor-preview');
 
 if (editorPreview) {
+  document.body.classList.add('editor-preview');
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
     const { type, projectId, values, selection, locked, inline } = event.data || {};

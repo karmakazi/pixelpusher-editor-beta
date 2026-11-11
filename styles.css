@@ -891,8 +891,21 @@ footer a:hover { color: var(--off-white); }
 }
 
 /* Editing affordances are added only inside the editor preview. */
+.editor-preview .cursor { display: none; }
+.editor-preview,
+.editor-preview * { cursor: auto !important; }
+.editor-preview [data-copy-field][contenteditable="plaintext-only"],
+.editor-preview [data-copy-field][contenteditable="plaintext-only"] * {
+  cursor: text !important;
+}
+.editor-preview .case-tagline {
+  animation: none;
+  caret-color: #d9f36c;
+}
+.editor-preview .case-tagline:focus { color: white; }
+.editor-preview .case-hero-img,
+.editor-preview .case-hero-scroll { pointer-events: none; }
 [data-copy-field] {
-  cursor: text;
   white-space: pre-wrap;
   outline-offset: 4px;
 }
