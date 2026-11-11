@@ -25,14 +25,8 @@
       <h1 id="heading">Edit a case study</h1>
       <label for="project">Project</label>
       <select id="project" disabled></select>
-      <p class="hint">Click text in the preview to select and edit it.</p>
+      <p class="hint">Click text in the preview to edit it or ask AI.</p>
       <h2 id="selection">Intro</h2>
-      <form id="assistant">
-        <label for="instruction">What should change?</label>
-        <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Revise the selected copy, for example: Make it shorter."></textarea>
-
-        <button id="generate" disabled>Draft with AI</button>
-      </form>
       <p id="status" role="status"></p>
       <div class="original"><h2>Published copy</h2><p id="original"></p></div>
       <label for="draft">Draft copy <small id="count"></small></label>

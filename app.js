@@ -5,18 +5,20 @@ let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
 let casePreview = null;
+let refreshCopyAI;
 const editorPreview = window.parent !== window && new URLSearchParams(location.search).has('editor-preview');
 
 if (editorPreview) {
   document.body.classList.add('editor-preview');
+  refreshCopyAI = setupCopyAI();
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
-    const { type, projectId, values, selection, locked, inline } = event.data || {};
+    const { type, projectId, values, selection, locked, inline, ai } = event.data || {};
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
         !Object.entries(values).every(([field, value]) => CaseCopy.valid(field, value))) return;
     const changed = casePreview?.projectId !== projectId || JSON.stringify(casePreview.values) !== JSON.stringify(values);
-    casePreview = { projectId, values, selection, locked };
+    casePreview = { projectId, values, selection, locked, ai };
     if (currentView !== `case:${projectId}`) return;
     if (changed && !(inline && document.activeElement?.matches('[data-copy-field]'))) {
       renderCase(projectId, true);
@@ -53,8 +55,10 @@ function syncEditableCopy() {
     const selection = casePreview?.selection;
     const paragraph = node.dataset.copyParagraph === undefined ? null : Number(node.dataset.copyParagraph);
     node.classList.toggle('copy-selected', selection?.field === node.dataset.copyField && selection.paragraph === paragraph);
-    node.contentEditable = casePreview?.locked ? 'false' : 'plaintext-only';
+    const reviewing = casePreview?.ai?.suggested && node.classList.contains('copy-selected');
+    node.contentEditable = casePreview?.locked || reviewing ? 'false' : 'plaintext-only';
   }
+  refreshCopyAI?.();
 }
 
 function sendCopyEvent(node, type, value) {
@@ -65,6 +69,127 @@ function sendCopyEvent(node, type, value) {
     paragraph: node.dataset.copyParagraph === undefined ? null : Number(node.dataset.copyParagraph),
     value,
   }, location.origin);
+}
+
+function setupCopyAI() {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'copy-ai';
+  toolbar.hidden = true;
+  toolbar.innerHTML = `
+    <button type="button" data-ask aria-expanded="false">Ask AI</button>
+    <form hidden aria-label="Revise selected copy">
+      <div class="copy-ai-heading">
+        <label for="copy-ai-instruction">Revise copy</label>
+        <button type="button" data-close aria-label="Close AI prompt">×</button>
+      </div>
+      <textarea id="copy-ai-instruction" rows="2" maxlength="1500" required placeholder="Make it shorter"></textarea>
+      <p role="status"></p>
+      <div class="copy-ai-actions">
+        <button type="submit">Draft with AI</button>
+        <button type="button" data-keep hidden>Keep</button>
+        <button type="button" data-discard hidden>Discard</button>
+      </div>
+    </form>`;
+  document.body.append(toolbar);
+
+  const ask = toolbar.querySelector('[data-ask]');
+  const form = toolbar.querySelector('form');
+  const instruction = form.querySelector('textarea');
+  const submit = form.querySelector('[type="submit"]');
+  const keep = form.querySelector('[data-keep]');
+  const discard = form.querySelector('[data-discard]');
+  const note = form.querySelector('[role="status"]');
+  let target;
+  let open = false;
+
+  function anchor() {
+    if (!target || target.project !== currentView) return null;
+    return [...document.querySelectorAll('[data-copy-field]')].find(node =>
+      node.dataset.copyField === target.field && node.dataset.copyParagraph === target.paragraph);
+  }
+
+  function refresh() {
+    const node = anchor();
+    if (!node) {
+      toolbar.hidden = true;
+      return;
+    }
+    const rect = node.getBoundingClientRect();
+    const narrow = window.innerWidth < 520;
+    const state = casePreview?.ai || {};
+    toolbar.hidden = Boolean(casePreview?.locked) ||
+      ((!open || !narrow) && (rect.bottom < 0 || rect.top > window.innerHeight));
+    if (toolbar.hidden) return;
+
+    ask.hidden = open;
+    ask.setAttribute('aria-expanded', String(open));
+    ask.disabled = Boolean(state.pending);
+    form.hidden = !open;
+    submit.hidden = Boolean(state.suggested);
+    keep.hidden = discard.hidden = !state.suggested;
+    instruction.hidden = Boolean(state.suggested);
+    instruction.disabled = submit.disabled = Boolean(state.pending);
+    note.textContent = state.note || '';
+    form.querySelector('label').textContent = node.getAttribute('aria-label');
+
+    toolbar.classList.toggle('copy-ai-docked', open && narrow);
+    if (open && narrow) {
+      toolbar.style.removeProperty('left');
+      toolbar.style.removeProperty('top');
+      return;
+    }
+    const { width, height } = toolbar.getBoundingClientRect();
+    const left = Math.min(rect.left, window.innerWidth - width - 12);
+    const below = rect.bottom + 8;
+    const top = below + height <= window.innerHeight - 8 ? below : rect.top - height - 8;
+    toolbar.style.left = `${Math.max(12, left)}px`;
+    toolbar.style.top = `${Math.max(8, top)}px`;
+  }
+
+  function select(node) {
+    const next = { project: currentView, field: node.dataset.copyField, paragraph: node.dataset.copyParagraph };
+    if (target?.project === next.project && target.field === next.field && target.paragraph === next.paragraph) return;
+    open = false;
+    instruction.value = '';
+    target = next;
+    refresh();
+  }
+
+  function close(type) {
+    const node = anchor();
+    if (node) sendCopyEvent(node, type);
+    open = false;
+    instruction.value = '';
+    refresh();
+    if (!toolbar.hidden) ask.focus();
+  }
+
+  document.addEventListener('focusin', event => {
+    const node = event.target.closest('[data-copy-field]');
+    if (node && node.isContentEditable) select(node);
+  });
+  ask.addEventListener('click', () => {
+    open = true;
+    refresh();
+    instruction.focus();
+  });
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const node = anchor();
+    if (node && instruction.value.trim()) sendCopyEvent(node, 'pixelpusher-ai-request', instruction.value);
+  });
+  keep.addEventListener('click', () => close('pixelpusher-ai-keep'));
+  discard.addEventListener('click', () => close('pixelpusher-ai-discard'));
+  form.querySelector('[data-close]').addEventListener('click', () => close('pixelpusher-ai-discard'));
+  toolbar.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && open) {
+      event.preventDefault();
+      close('pixelpusher-ai-discard');
+    }
+  });
+  window.addEventListener('scroll', refresh, { passive: true });
+  window.addEventListener('resize', refresh);
+  return refresh;
 }
 
 // ── CURSOR ─────────────────────────────────────────────────
