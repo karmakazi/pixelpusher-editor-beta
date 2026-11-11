@@ -1,6 +1,8 @@
 'use strict';
 
 const projectSelect = document.querySelector('#project');
+const fieldSelect = document.querySelector('#field');
+const changeSummary = document.querySelector('#changes');
 const original = document.querySelector('#original');
 const draft = document.querySelector('#draft');
 const instruction = document.querySelector('#instruction');
@@ -18,54 +20,97 @@ const mobile = document.querySelector('#mobile');
 
 let projects = [];
 let selected;
+let edits = {};
 let revision = 0;
 let pending = false;
 let releasing = false;
 const lastRelease = new Map();
 try {
   for (const [id, release] of JSON.parse(sessionStorage.getItem('pixelpusher-releases') || '[]')) {
-    lastRelease.set(id, release);
+    lastRelease.set(id, typeof release.previous === 'string'
+      ? { previous: { tagline: release.previous }, changes: { tagline: release.tagline } }
+      : release);
   }
 } catch {
   // Continue when session storage is unavailable.
 }
 
+for (const [field, definition] of Object.entries(CaseCopy.fields)) {
+  fieldSelect.add(new Option(definition.label, field));
+}
+fieldSelect.value = 'tagline';
+
+function matches(project, values) {
+  return project && values && Object.entries(values)
+    .every(([field, value]) => CaseCopy.read(project, field) === value);
+}
+
 function updateDraft() {
-  const value = draft.value;
-  document.querySelector('#count').textContent = `${value.length}/240`;
-  const changed = value.trim() !== selected.tagline;
-  publish.disabled = releasing || pending || !changed || !value.trim();
-  undo.disabled = releasing || pending || changed || lastRelease.get(selected.id)?.tagline !== selected.tagline;
-  reset.disabled = releasing || !changed;
+  const field = fieldSelect.value;
+  const definition = CaseCopy.fields[field];
+  const entries = Object.entries(edits);
+  const invalid = entries.some(([key, value]) => !CaseCopy.valid(key, value));
+  const rule = field === 'copy' ? 'Separate paragraphs with a blank line.' :
+    definition.list ? 'Enter one item per line.' : 'Use a single line.';
+  document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
+  draft.setAttribute('aria-invalid', String(!CaseCopy.valid(field, draft.value)));
+  changeSummary.textContent = invalid ? 'Check the length and line breaks in your edited copy.' :
+    [rule, entries.length ? `Edited: ${entries.map(([key]) => CaseCopy.fields[key].label).join(', ')}.` : ''].join(' ').trim();
+  publish.disabled = releasing || pending || !entries.length || invalid;
+  undo.disabled = releasing || pending || Boolean(entries.length) ||
+    !matches(selected, lastRelease.get(selected.id)?.changes);
+  reset.disabled = releasing || !entries.length;
   preview.contentWindow?.postMessage({
-    type: 'pixelpusher-intro-preview',
+    type: 'pixelpusher-copy-preview',
     projectId: selected.id,
-    tagline: value,
+    values: Object.fromEntries(entries.filter(([key, value]) => CaseCopy.valid(key, value))),
   }, location.origin);
+}
+
+function showField() {
+  const field = fieldSelect.value;
+  original.textContent = CaseCopy.read(selected, field);
+  draft.maxLength = CaseCopy.fields[field].max;
+  draft.value = edits[field] ?? original.textContent;
+  draft.disabled = false;
+  status.textContent = '';
+  updateDraft();
 }
 
 function selectProject() {
   revision++;
   selected = projects.find(project => project.id === projectSelect.value);
-  original.textContent = selected.tagline;
-  draft.value = selected.tagline;
-  draft.disabled = false;
-  status.textContent = '';
+  edits = {};
+  releaseStatus.textContent = '';
+  commitLink.hidden = liveLink.hidden = true;
   preview.src = `/?editor-preview=1#/work/${encodeURIComponent(selected.id)}`;
+  showField();
+}
+
+function editField() {
+  revision++;
+  const field = fieldSelect.value;
+  const value = CaseCopy.normalize(field, draft.value);
+  if (value === CaseCopy.read(selected, field)) delete edits[field];
+  else edits[field] = value;
   updateDraft();
 }
 
 preview.addEventListener('load', () => { if (selected) updateDraft(); });
-projectSelect.addEventListener('change', selectProject);
-draft.addEventListener('input', () => {
-  revision++;
-  updateDraft();
+projectSelect.addEventListener('change', () => {
+  if (Object.keys(edits).length && !window.confirm('Discard unpublished edits to this case study?')) {
+    projectSelect.value = selected.id;
+    return;
+  }
+  selectProject();
 });
+fieldSelect.addEventListener('change', () => { revision++; showField(); });
+draft.addEventListener('input', editField);
 reset.addEventListener('click', () => {
   revision++;
-  draft.value = selected.tagline;
+  edits = {};
+  showField();
   status.textContent = 'Draft reset.';
-  updateDraft();
 });
 mobile.addEventListener('click', () => {
   const enabled = preview.classList.toggle('mobile');
@@ -93,7 +138,7 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${access.value}`,
       },
-      body: JSON.stringify({ projectId: selected.id, instruction: instruction.value }),
+      body: JSON.stringify({ projectId: selected.id, field: fieldSelect.value, current: draft.value, instruction: instruction.value }),
     });
     const proposal = await response.json();
     if (!response.ok) throw new Error(proposal.error);
@@ -101,9 +146,9 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
       status.textContent = 'The draft changed while AI was working. Generate again to see a new suggestion.';
       return;
     }
-    if (proposal.tagline.trim()) {
-      draft.value = proposal.tagline;
-      updateDraft();
+    if (proposal.value !== null) {
+      draft.value = proposal.value;
+      editField();
     }
     status.textContent = proposal.note || 'Draft ready for review.';
   } catch (error) {
@@ -117,12 +162,12 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
   }
 });
 
-async function verifyRelease(projectId, tagline) {
+async function verifyRelease(projectId, changes) {
   for (let attempt = 0; attempt < 30; attempt++) {
     try {
       const response = await fetch(`/projects.json?release-check=${Date.now()}`, { cache: 'no-store' });
       const current = response.ok && (await response.json()).find(item => item.id === projectId);
-      if (current?.tagline === tagline) return true;
+      if (matches(current, changes)) return true;
     } catch {
       // A deployment can briefly be unavailable.
     }
@@ -139,14 +184,14 @@ async function release(isUndo) {
     return;
   }
   const project = selected;
-  const previous = project.tagline;
-  const tagline = isUndo ? lastRelease.get(project.id)?.previous : draft.value.trim();
-  if (!tagline || tagline === previous) return;
+  const changes = isUndo ? lastRelease.get(project.id)?.previous : { ...edits };
+  if (!changes || !Object.keys(changes).length) return;
+  const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
   releasing = true;
-  projectSelect.disabled = draft.disabled = generate.disabled = reset.disabled = true;
+  projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = reset.disabled = true;
   updateDraft();
   commitLink.hidden = liveLink.hidden = true;
-  releaseStatus.textContent = isUndo ? 'Restoring the previous intro…' : 'Publishing to GitHub…';
+  releaseStatus.textContent = isUndo ? 'Restoring the previous copy…' : 'Publishing to GitHub…';
 
   try {
     const response = await fetch('/api/publish', {
@@ -155,27 +200,32 @@ async function release(isUndo) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${access.value}`,
       },
-      body: JSON.stringify({ projectId: project.id, previous, tagline, undo: isUndo }),
+      body: JSON.stringify({ projectId: project.id, previous, changes, undo: isUndo }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error);
 
     if (isUndo) lastRelease.delete(project.id);
-    else lastRelease.set(project.id, { previous, tagline });
+    else lastRelease.set(project.id, { previous, changes });
     try {
       sessionStorage.setItem('pixelpusher-releases', JSON.stringify([...lastRelease]));
     } catch {
       // Undo remains available in the current page.
     }
-    project.tagline = tagline;
-    original.textContent = draft.value = tagline;
+    edits = changes;
     commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${result.commit}`;
     commitLink.hidden = false;
     releaseStatus.textContent = 'Saved to GitHub. Waiting for Vercel…';
     updateDraft();
 
-    if (await verifyRelease(project.id, tagline)) {
-      releaseStatus.textContent = isUndo ? 'Previous intro restored on the beta site.' : 'Published on the beta site.';
+    if (await verifyRelease(project.id, changes)) {
+      Object.assign(project, CaseCopy.apply(project, changes));
+      projectSelect.selectedOptions[0].textContent =
+        `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`;
+      edits = {};
+      showField();
+      preview.src = `/?editor-preview=1&release=${result.commit}#/work/${encodeURIComponent(project.id)}`;
+      releaseStatus.textContent = isUndo ? 'Previous copy restored on the beta site.' : 'Published on the beta site.';
       liveLink.href = `/#/work/${encodeURIComponent(project.id)}`;
       liveLink.hidden = false;
     } else {
@@ -187,7 +237,7 @@ async function release(isUndo) {
       : error.message;
   } finally {
     releasing = false;
-    projectSelect.disabled = draft.disabled = generate.disabled = false;
+    projectSelect.disabled = fieldSelect.disabled = draft.disabled = generate.disabled = false;
     updateDraft();
   }
 }
@@ -203,10 +253,10 @@ fetch('/projects.json')
   .then(data => {
     projects = data;
     for (const project of projects.filter(item => !item.comingSoon)) {
-      projectSelect.add(new Option(`${project.client} — ${project.title}`, project.id));
+      projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
     if (!projectSelect.options.length) throw new Error('No case studies available.');
-    projectSelect.disabled = false;
+    projectSelect.disabled = fieldSelect.disabled = false;
     generate.disabled = false;
     selectProject();
   })

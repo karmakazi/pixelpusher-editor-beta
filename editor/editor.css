@@ -28,3 +28,5 @@ iframe.mobile { width: min(100%, 390px); }
 @media (max-width: 740px) { main { grid-template-columns: 1fr; } .preview { min-height: 36rem; border-left: 0; border-top: 1px solid #373737; } }
 #release-status { font-size: .85rem; line-height: 1.5; }
 #commit, #live { color: #d9f36c; font-size: .82rem; margin-right: .8rem; }
+#original { white-space: pre-wrap; max-height: 12rem; overflow: auto; }
+#changes { color: #c7c7bf; font-size: .82rem; line-height: 1.5; }

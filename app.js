@@ -4,17 +4,18 @@
 let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
-let introPreview = null;
+let casePreview = null;
 
 if (window.parent !== window && new URLSearchParams(location.search).has('editor-preview')) {
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
-    const { type, projectId, tagline } = event.data || {};
-    if (type !== 'pixelpusher-intro-preview' || typeof projectId !== 'string' ||
-        typeof tagline !== 'string' || tagline.length > 240) return;
-    introPreview = { projectId, tagline };
-    const intro = document.querySelector('.case-tagline');
-    if (intro && currentView === `case:${projectId}`) intro.textContent = tagline;
+    const { type, projectId, values } = event.data || {};
+    if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
+        !values || typeof values !== 'object' ||
+        !Object.entries(values).every(([field, value]) => CaseCopy.valid(field, value))) return;
+    if (casePreview?.projectId === projectId && JSON.stringify(casePreview.values) === JSON.stringify(values)) return;
+    casePreview = { projectId, values };
+    if (currentView === `case:${projectId}`) renderCase(projectId, true);
   });
 }
 
@@ -437,8 +438,9 @@ function renderWork() {
 }
 
 // ── RENDER: CASE STUDY ────────────────────────────────────
-function renderCase(id) {
-  const p = PROJECTS.find(x => x.id === id);
+function renderCase(id, preserveScroll = false) {
+  const stored = PROJECTS.find(x => x.id === id);
+  const p = stored && casePreview?.projectId === id ? CaseCopy.apply(stored, casePreview.values) : stored;
 
   if (!p || p.comingSoon) {
     location.hash = '#/work';
@@ -446,9 +448,11 @@ function renderCase(id) {
   }
 
   currentView = `case:${id}`;
-  document.title = `${p.client} \u2014 ${p.title} \u2014 Pixelpusher`;
-  setMeta(`How Pixelpusher created ${p.title} for ${p.client}. ${p.tagline || ''}`);
-  window.scrollTo(0, 0);
+  const clientName = CaseCopy.read(p, 'client');
+  const projectTitle = CaseCopy.read(p, 'title').replaceAll('\n', ' ');
+  document.title = `${clientName} \u2014 ${projectTitle} \u2014 Pixelpusher`;
+  setMeta(`How Pixelpusher created ${projectTitle} for ${clientName}. ${p.tagline || ''}`);
+  if (!preserveScroll) window.scrollTo(0, 0);
 
   const next = p.nextProject ? PROJECTS.find(x => x.id === p.nextProject) : null;
 
@@ -560,7 +564,7 @@ function renderCase(id) {
     </section>
 
     <section class="case-overview">
-      <p class="case-pull r">\u201c${p.pullQuote}\u201d</p>
+      ${p.pullQuote ? `<p class="case-pull r">\u201c${p.pullQuote}\u201d</p>` : ''}
       <div>
         ${copyHtml}
       </div>
@@ -574,7 +578,7 @@ function renderCase(id) {
 
   `;
   document.querySelector('.case-tagline').textContent =
-    introPreview?.projectId === id ? introPreview.tagline : p.tagline;
+    p.tagline;
 
   initReveal();
   fitTitle();

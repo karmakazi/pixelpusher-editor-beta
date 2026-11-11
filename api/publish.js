@@ -1,28 +1,26 @@
 const { timingSafeEqual } = require('node:crypto');
+const CaseCopy = require('../editor/case-copy');
 
 const repo = 'karmakazi/pixelpusher-editor-beta';
 const contentsUrl = `https://api.github.com/repos/${repo}/contents/projects.json`;
 const branch = 'main';
 
-function replaceIntro(source, projectId, tagline) {
-  const projects = JSON.parse(source);
-  const index = projects.findIndex(project => project.id === projectId && !project.comingSoon);
-  if (index < 0) return null;
-
-  // Match the existing file layout and verify that only the selected field changes.
-  const projectStarts = [...source.matchAll(/^  \{\r?$/gm)];
-  if (projectStarts.length !== projects.length) throw new Error('Unexpected project layout');
-  const start = projectStarts[index].index;
-  const end = projectStarts[index + 1]?.index ?? source.length;
+function replaceCopy(source, projects, index, changes) {
+  const blocks = [...source.matchAll(/^  \{\r?$/gm)];
+  if (blocks.length !== projects.length) throw new Error('Unexpected project layout');
+  const start = blocks[index].index;
+  const end = blocks[index + 1]?.index ?? source.length;
   const block = source.slice(start, end);
-  const updated = block.replace(/^(    "tagline": )"(?:[^"\\]|\\.)*"/m,
-    (_, prefix) => prefix + JSON.stringify(tagline));
-  const result = source.slice(0, start) + updated + source.slice(end);
-  projects[index].tagline = tagline;
-  if (JSON.stringify(JSON.parse(result)) !== JSON.stringify(projects)) {
-    throw new Error('Could not isolate the intro field');
+  const close = block.lastIndexOf('\n  }');
+  if (close < 0) throw new Error('Unexpected project boundary');
+  const suffix = block.slice(close + 4);
+  projects[index] = CaseCopy.apply(projects[index], changes);
+  const json = JSON.stringify(projects[index], null, 2).replace(/^/gm, '  ');
+  const updated = source.slice(0, start) + json + suffix + source.slice(end);
+  if (JSON.stringify(JSON.parse(updated)) !== JSON.stringify(projects)) {
+    throw new Error('Could not isolate the case study');
   }
-  return result;
+  return updated;
 }
 
 module.exports = async function publish(req, res) {
@@ -41,10 +39,14 @@ module.exports = async function publish(req, res) {
     return res.status(401).json({ error: 'Enter the editor access code to publish.' });
   }
   const { projectId, previous, tagline, undo } = req.body || {};
-  if (typeof projectId !== 'string' || typeof previous !== 'string' ||
-      typeof tagline !== 'string' || !tagline.trim() ||
-      tagline.length > (undo === true ? 2000 : 240) || previous === tagline) {
-    return res.status(400).json({ error: 'Choose a project and enter a changed intro.' });
+  const changes = req.body?.changes ?? { tagline };
+  const baseline = typeof previous === 'string' ? { tagline: previous } : previous;
+  const entries = changes && typeof changes === 'object' ? Object.entries(changes) : [];
+  if (typeof projectId !== 'string' || !baseline || !entries.length ||
+      !entries.every(([field, value]) => CaseCopy.valid(field, value) &&
+        Object.hasOwn(baseline, field) && typeof baseline[field] === 'string' &&
+        baseline[field] !== value && CaseCopy.normalize(field, value) === value)) {
+    return res.status(400).json({ error: 'Choose a case study and check the edited fields.' });
   }
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -60,11 +62,12 @@ module.exports = async function publish(req, res) {
     }
     const file = await response.json();
     const source = Buffer.from(file.content, 'base64').toString('utf8');
-    const project = JSON.parse(source).find(item => item.id === projectId && !item.comingSoon);
-    if (!project || project.tagline !== previous) {
-      return res.status(409).json({ error: 'This intro changed in GitHub. Wait for the latest deployment and reload before editing it.' });
+    const projects = JSON.parse(source);
+    const index = projects.findIndex(item => item.id === projectId && !item.comingSoon);
+    if (index < 0 || entries.some(([field]) => CaseCopy.read(projects[index], field) !== baseline[field])) {
+      return res.status(409).json({ error: 'This copy changed in GitHub. Wait for the latest deployment and reload before editing it.' });
     }
-    const updated = replaceIntro(source, projectId, tagline);
+    const updated = replaceCopy(source, projects, index, changes);
     const saved = await fetch(contentsUrl, {
       method: 'PUT',
       headers,
@@ -73,7 +76,7 @@ module.exports = async function publish(req, res) {
         branch,
         sha: file.sha,
         content: Buffer.from(updated).toString('base64'),
-        message: `${undo === true ? 'Restore' : 'Update'} case study intro: ${project.id}`,
+        message: `${undo === true ? 'Restore' : 'Update'} case study copy: ${projectId}`,
       }),
     });
     if (saved.status === 409) {

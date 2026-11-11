@@ -1,4 +1,5 @@
 const { timingSafeEqual } = require('node:crypto');
+const CaseCopy = require('../editor/case-copy');
 const projects = require('../projects.json');
 
 module.exports = async function draft(req, res) {
@@ -19,12 +20,16 @@ module.exports = async function draft(req, res) {
     return res.status(401).json({ error: 'Enter the editor access code to use AI drafting.' });
   }
 
-  const { projectId, instruction } = req.body || {};
+  const { projectId, instruction, field = 'tagline', current } = req.body || {};
+  const legacy = req.body?.field === undefined;
   const project = projects.find(item => item.id === projectId && !item.comingSoon);
-  if (!project || typeof instruction !== 'string' || !instruction.trim() || instruction.length > 1500) {
+  if (!project || !Object.hasOwn(CaseCopy.fields, field) ||
+      (current !== undefined && (typeof current !== 'string' || current.length > CaseCopy.fields[field].max)) ||
+      typeof instruction !== 'string' || !instruction.trim() || instruction.length > 1500) {
     return res.status(400).json({ error: 'Choose a project and enter an instruction of up to 1,500 characters.' });
   }
 
+  const definition = CaseCopy.fields[field];
   try {
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -37,23 +42,23 @@ module.exports = async function draft(req, res) {
         model: 'gpt-6-luna',
         store: false,
         reasoning: { effort: 'none' },
-        max_output_tokens: 350,
-        instructions: 'Draft one plain-text case study intro for Pixelpusher in up to 240 characters. Use project facts only. If the requested change needs missing facts or is outside the intro, return an empty tagline and explain in note.',
+        max_output_tokens: field === 'copy' ? 4200 : 600,
+        instructions: 'Rewrite only the requested case study field in plain text. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. For body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
         input: JSON.stringify({
-          client: project.client,
-          title: project.title,
-          tagline: project.tagline,
-          copy: project.copy,
+          field: definition.label,
+          maxCharacters: definition.max,
+          current: current ?? CaseCopy.read(project, field),
+          context: Object.fromEntries(Object.keys(CaseCopy.fields).map(key => [key, CaseCopy.read(project, key)])),
           instruction,
         }),
         text: { format: {
           type: 'json_schema',
-          name: 'intro_draft',
+          name: 'case_copy_draft',
           strict: true,
           schema: {
             type: 'object',
-            properties: { tagline: { type: 'string' }, note: { type: 'string' } },
-            required: ['tagline', 'note'],
+            properties: { value: { type: ['string', 'null'] }, note: { type: 'string' } },
+            required: ['value', 'note'],
             additionalProperties: false,
           },
         } },
@@ -71,10 +76,10 @@ module.exports = async function draft(req, res) {
       return res.status(422).json({ error: 'The model did not return a draft. Try a more specific instruction.' });
     }
     const proposal = JSON.parse(output.text);
-    if (typeof proposal.tagline !== 'string' || proposal.tagline.length > 240 || typeof proposal.note !== 'string') {
-      return res.status(422).json({ error: 'The draft was outside the intro limits. Try a shorter edit.' });
+    if ((proposal.value !== null && !CaseCopy.valid(field, proposal.value)) || typeof proposal.note !== 'string') {
+      return res.status(422).json({ error: 'The draft was outside the field limits. Try a shorter edit.' });
     }
-    return res.status(200).json(proposal);
+    return res.status(200).json(legacy ? { tagline: proposal.value || '', note: proposal.note } : proposal);
   } catch {
     return res.status(502).json({ error: 'AI drafting is unavailable right now. You can still edit the draft directly.' });
   }
