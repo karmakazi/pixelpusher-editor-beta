@@ -1,0 +1,13 @@
+{
+  "name": "pixelpusher-editor-beta",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.cjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

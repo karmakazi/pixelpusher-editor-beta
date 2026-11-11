@@ -73,6 +73,13 @@ const CaseCopy = (() => {
       (Boolean(list) || !/[\r\n]/.test(value));
   }
 
+  function validPreview(field, value, origin) {
+    if (valid(field, value)) return true;
+    if (imageField(field)?.type !== 'url' || typeof value !== 'string') return false;
+    return value.startsWith(`blob:${origin}/`) &&
+      /^[a-f0-9-]{36}$/i.test(value.slice(origin.length + 6));
+  }
+
   function normalize(field, value) {
     if (field === 'copy') return value.trim().split(/\n\s*\n/).map(p => p.trim()).join('\n\n');
     if (definition(field).list) return value.split('\n').map(line => line.trim()).filter(Boolean).join('\n');
@@ -108,7 +115,7 @@ const CaseCopy = (() => {
     return updated;
   }
 
-  return { fields, definition, hasField, read, valid, normalize, apply, escape: encode };
+  return { fields, definition, hasField, read, valid, validPreview, normalize, apply, escape: encode };
 })();
 
 if (typeof module !== 'undefined') module.exports = CaseCopy;

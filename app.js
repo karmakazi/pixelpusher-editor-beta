@@ -16,7 +16,7 @@ if (editorPreview) {
     const { type, projectId, values, selection, locked, inline, ai, image } = event.data || {};
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
-        !Object.entries(values).every(([field, value]) => CaseCopy.valid(field, value))) return;
+        !Object.entries(values).every(([field, value]) => CaseCopy.validPreview(field, value, location.origin))) return;
     const changed = casePreview?.projectId !== projectId || JSON.stringify(casePreview.values) !== JSON.stringify(values);
     casePreview = { projectId, values, selection, locked, ai, image };
     if (currentView !== `case:${projectId}`) return;

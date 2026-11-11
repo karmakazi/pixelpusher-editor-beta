@@ -5,6 +5,9 @@ const selectionLabel = document.querySelector('#selection');
 const changeSummary = document.querySelector('#changes');
 const copyControls = document.querySelector('#copy-controls');
 const imageControls = document.querySelector('#image-controls');
+const imageFile = document.querySelector('#image-file');
+const chosenImage = document.querySelector('#chosen-image');
+const removeImage = document.querySelector('#remove-image');
 const imageUrl = document.querySelector('#image-url');
 const imageAlt = document.querySelector('#image-alt');
 const imageStatus = document.querySelector('#image-status');
@@ -39,6 +42,8 @@ let aiNote = '';
 let releasing = false;
 const lastRelease = new Map();
 const awaitingDeployment = new Map();
+const imageFiles = new Map();
+let checkingImages = 0;
 try {
   for (const [id, release] of JSON.parse(sessionStorage.getItem('pixelpusher-releases') || '[]')) {
     lastRelease.set(id, typeof release.previous === 'string'
@@ -129,17 +134,19 @@ function updateDraft(inline = false) {
   const { field, paragraph } = selection;
   const definition = CaseCopy.fields[field];
   const entries = Object.entries(edits);
+  const hasEdits = entries.length > 0 || imageFiles.size > 0;
   const invalid = entries.some(([key, value]) => !validEdit(key, value));
   const rule = paragraph !== null ? '' :
     definition.list ? 'Enter one item per line.' : '';
   document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
   draft.setAttribute('aria-invalid', String(!validEdit(field, edits[field] ?? CaseCopy.read(selected, field))));
   changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
-    [rule, entries.length ? `Edited: ${entries.map(([key]) => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
-  publish.disabled = releasing || pending || suggestion !== null || !entries.length || invalid;
-  undo.disabled = releasing || pending || suggestion !== null || Boolean(entries.length) ||
+    [rule, hasEdits ? `Edited: ${[...new Set([...entries.map(([key]) => key), ...imageFiles.keys()])]
+      .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
+  publish.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || !hasEdits || invalid;
+  undo.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || hasEdits ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
-  reset.disabled = releasing || !entries.length;
+  reset.disabled = releasing || (!hasEdits && checkingImages === 0);
   restoreDraft.hidden = !previousDrafts.has(selectionKey());
   restoreDraft.disabled = releasing || pending;
   preview.contentWindow?.postMessage({
@@ -154,6 +161,7 @@ function updateDraft(inline = false) {
       ...awaitingDeployment.get(selected.id),
       ...Object.fromEntries(entries.filter(([key, value]) => validEdit(key, value))),
       ...(suggestion === null ? {} : { [field]: fieldValue(suggestion) }),
+      ...Object.fromEntries([...imageFiles].map(([key, item]) => [key, item.previewUrl])),
     },
   }, location.origin);
 }
@@ -169,7 +177,11 @@ function showField() {
       input.value = edits[field] ?? CaseCopy.read(selected, field);
       input.disabled = releasing;
     }
-    previewImage.disabled = releasing;
+    imageFile.value = '';
+    const file = imageFiles.get(`${imageSelection}:url`);
+    chosenImage.hidden = removeImage.hidden = !file;
+    chosenImage.textContent = file ? file.file.name : '';
+    imageFile.disabled = removeImage.disabled = previewImage.disabled = releasing;
     imageStatus.textContent = '';
     updateDraft();
     return;
@@ -189,6 +201,7 @@ function selectProject() {
   revision++;
   selected = projects.find(project => project.id === projectSelect.value);
   edits = {};
+  clearFiles();
   previousDrafts.clear();
   suggestion = null;
   aiNote = '';
@@ -276,9 +289,71 @@ window.addEventListener('message', event => {
   }
 });
 
+function removeFile(key) {
+  const item = imageFiles.get(key);
+  if (item) URL.revokeObjectURL(item.previewUrl);
+  imageFiles.delete(key);
+}
+
+function clearFiles() {
+  for (const key of imageFiles.keys()) removeFile(key);
+}
+
+function stageImageField(field, value) {
+  if (value === CaseCopy.read(selected, field)) delete edits[field];
+  else edits[field] = value;
+}
+
+imageFile.addEventListener('change', async () => {
+  if (!imageSelection || releasing) return;
+  const file = imageFile.files[0];
+  if (!file) return;
+  if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(file.type) || !file.size || file.size > 20 * 1024 * 1024) {
+    imageFile.value = '';
+    imageStatus.textContent = 'Choose a JPEG, PNG, WebP, GIF, or AVIF image up to 20 MB.';
+    return;
+  }
+  const key = `${imageSelection}:url`;
+  const requestedRevision = ++revision;
+  const previewUrl = URL.createObjectURL(file);
+  let staged = false;
+  checkingImages++;
+  updateDraft();
+  try {
+    const candidate = new Image();
+    candidate.src = previewUrl;
+    await candidate.decode();
+    if (revision !== requestedRevision || releasing) return;
+    removeFile(key);
+    delete edits[key];
+    imageFiles.set(key, { file, previewUrl });
+    staged = true;
+    showField();
+    imageStatus.textContent = 'File ready to publish.';
+  } catch {
+    if (revision === requestedRevision) imageStatus.textContent = 'This file could not be opened as an image.';
+  } finally {
+    if (!staged) URL.revokeObjectURL(previewUrl);
+    checkingImages--;
+    updateDraft();
+  }
+});
+
+removeImage.addEventListener('click', () => {
+  revision++;
+  removeFile(`${imageSelection}:url`);
+  showField();
+});
+
+imageAlt.addEventListener('input', () => {
+  const field = `${imageSelection}:alt`;
+  stageImageField(field, imageAlt.value.trim());
+  updateDraft();
+});
+
 imageControls.addEventListener('submit', async event => {
   event.preventDefault();
-  if (releasing || !imageSelection) return;
+  if (releasing || !imageSelection || event.submitter !== previewImage || !previewImage.closest('details').open) return;
   const key = imageSelection;
   const project = selected;
   const url = imageUrl.value.trim();
@@ -304,20 +379,19 @@ imageControls.addEventListener('submit', async event => {
     }
   }
   if (revision !== requestedRevision || releasing || selected !== project || imageSelection !== key) return;
-  for (const [name, value] of [['url', url], ['alt', alt]]) {
-    const field = `${key}:${name}`;
-    if (value === CaseCopy.read(project, field)) delete edits[field];
-    else edits[field] = value;
-  }
+  removeFile(`${key}:url`);
+  stageImageField(`${key}:url`, url);
+  stageImageField(`${key}:alt`, alt);
+  showField();
   updateDraft();
   imageStatus.textContent = 'Image preview updated.';
 });
 
-imageControls.addEventListener('input', () => { revision++; });
+imageUrl.addEventListener('input', () => { revision++; });
 
 preview.addEventListener('load', () => { if (selected) updateDraft(); });
 projectSelect.addEventListener('change', () => {
-  if (Object.keys(edits).length && !window.confirm('Discard unpublished edits to this case study?')) {
+  if ((Object.keys(edits).length || imageFiles.size) && !window.confirm('Discard unpublished edits to this case study?')) {
     projectSelect.value = selected.id;
     return;
   }
@@ -327,6 +401,7 @@ draft.addEventListener('input', () => editField());
 reset.addEventListener('click', () => {
   revision++;
   edits = {};
+  clearFiles();
   previousDrafts.clear();
   suggestion = null;
   aiNote = '';
@@ -402,19 +477,29 @@ async function verifyRelease(projectId, changes) {
 }
 
 async function release(isUndo) {
-  if (releasing || pending || suggestion !== null || !selected) return;
+  if (releasing || pending || checkingImages > 0 || suggestion !== null || !selected) return;
   const project = selected;
   const changes = isUndo ? lastRelease.get(project.id)?.previous : { ...edits };
-  if (!changes || !Object.keys(changes).length) return;
-  const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
+  if (!changes || (!Object.keys(changes).length && !imageFiles.size)) return;
   releasing = true;
   projectSelect.disabled = draft.disabled = reset.disabled = signOut.disabled = true;
-  imageUrl.disabled = imageAlt.disabled = previewImage.disabled = true;
+  imageFile.disabled = removeImage.disabled = imageUrl.disabled = imageAlt.disabled = previewImage.disabled = true;
   updateDraft();
   commitLink.hidden = liveLink.hidden = true;
   releaseStatus.textContent = isUndo ? 'Restoring the previous copy…' : 'Publishing to GitHub…';
 
   try {
+    if (!isUndo && imageFiles.size) {
+      const { uploadImage } = await import('/editor/image-upload.bundle.js');
+      let count = 0;
+      for (const [field, item] of imageFiles) {
+        releaseStatus.textContent = `Uploading image ${++count} of ${imageFiles.size}…`;
+        item.uploadedUrl ??= await uploadImage(item.file);
+        changes[field] = item.uploadedUrl;
+      }
+      releaseStatus.textContent = 'Publishing to GitHub…';
+    }
+    const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
     const response = await fetch('/api/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -437,6 +522,7 @@ async function release(isUndo) {
     projectSelect.selectedOptions[0].textContent =
       `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`;
     edits = {};
+    clearFiles();
     previousDrafts.clear();
     suggestion = null;
     aiNote = '';
@@ -456,13 +542,14 @@ async function release(isUndo) {
       releaseStatus.textContent = 'Saved to GitHub. The beta URL has yet to show the change. Check Vercel Deployments.';
     }
   } catch (error) {
+    if (error.status === 401) return sessionExpired();
     releaseStatus.textContent = error instanceof SyntaxError
       ? 'Could not confirm publication. Check Vercel and GitHub before retrying.'
       : error.message;
   } finally {
     releasing = false;
     projectSelect.disabled = draft.disabled = signOut.disabled = false;
-    imageUrl.disabled = imageAlt.disabled = previewImage.disabled = false;
+    imageFile.disabled = removeImage.disabled = imageUrl.disabled = imageAlt.disabled = previewImage.disabled = false;
     updateDraft();
   }
 }
