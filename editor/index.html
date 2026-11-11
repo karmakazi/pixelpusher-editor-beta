@@ -15,11 +15,12 @@
       <h1 id="heading">Edit a case study</h1>
       <label for="project">Project</label>
       <select id="project" disabled></select>
+      <label for="access">Editor access code</label>
+      <input id="access" type="password" autocomplete="off">
       <form id="assistant">
         <label for="instruction">What should change?</label>
         <textarea id="instruction" rows="3" maxlength="1500" required placeholder="Make the intro shorter and lead with what we built."></textarea>
-        <label for="access">Editor access code</label>
-        <input id="access" type="password" autocomplete="off" required>
+
         <button id="generate" disabled>Draft with AI</button>
       </form>
       <p id="status" role="status"></p>
@@ -27,10 +28,13 @@
       <label for="draft">Draft intro <small id="count"></small></label>
       <textarea id="draft" rows="4" maxlength="240" disabled></textarea>
       <div class="actions">
-        <button id="download" disabled>Download updated content</button>
+        <button id="publish" disabled>Publish to beta</button>
+        <button class="secondary" id="undo" disabled>Undo publish</button>
         <button class="secondary" id="reset" disabled>Reset draft</button>
       </div>
-      <p class="hint">Downloads the updated projects.json for review. Your draft is visible in the preview.</p>
+      <p id="release-status" role="status"></p>
+      <a id="commit" hidden target="_blank" rel="noopener">View GitHub commit ↗</a>
+      <a id="live" hidden target="_blank" rel="noopener">View live case study ↗</a>
     </section>
     <section class="preview" aria-label="Case study preview">
       <div class="preview-bar"><strong>Draft preview</strong><button class="secondary" id="mobile" aria-pressed="false">Mobile view</button></div>

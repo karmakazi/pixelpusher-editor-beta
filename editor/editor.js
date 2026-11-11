@@ -8,7 +8,11 @@ const access = document.querySelector('#access');
 const status = document.querySelector('#status');
 const preview = document.querySelector('#preview');
 const generate = document.querySelector('#generate');
-const download = document.querySelector('#download');
+const publish = document.querySelector('#publish');
+const undo = document.querySelector('#undo');
+const releaseStatus = document.querySelector('#release-status');
+const commitLink = document.querySelector('#commit');
+const liveLink = document.querySelector('#live');
 const reset = document.querySelector('#reset');
 const mobile = document.querySelector('#mobile');
 
@@ -16,13 +20,23 @@ let projects = [];
 let selected;
 let revision = 0;
 let pending = false;
+let releasing = false;
+const lastRelease = new Map();
+try {
+  for (const [id, release] of JSON.parse(sessionStorage.getItem('pixelpusher-releases') || '[]')) {
+    lastRelease.set(id, release);
+  }
+} catch {
+  // Continue when session storage is unavailable.
+}
 
 function updateDraft() {
   const value = draft.value;
   document.querySelector('#count').textContent = `${value.length}/240`;
   const changed = value.trim() !== selected.tagline;
-  download.disabled = !changed || !value.trim();
-  reset.disabled = !changed;
+  publish.disabled = releasing || pending || !changed || !value.trim();
+  undo.disabled = releasing || pending || changed || lastRelease.get(selected.id)?.tagline !== selected.tagline;
+  reset.disabled = releasing || !changed;
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-intro-preview',
     projectId: selected.id,
@@ -61,10 +75,16 @@ mobile.addEventListener('click', () => {
 
 document.querySelector('#assistant').addEventListener('submit', async event => {
   event.preventDefault();
-  if (pending || !selected) return;
+  if (pending || releasing || !selected) return;
+  if (!access.value) {
+    status.textContent = 'Enter the editor access code.';
+    access.focus();
+    return;
+  }
   const requestedRevision = revision;
   pending = true;
   generate.disabled = true;
+  updateDraft();
   status.textContent = 'Drafting…';
   try {
     const response = await fetch('/api/draft', {
@@ -93,21 +113,87 @@ document.querySelector('#assistant').addEventListener('submit', async event => {
   } finally {
     pending = false;
     generate.disabled = false;
+    updateDraft();
   }
 });
 
-download.addEventListener('click', () => {
-  const updated = projects.map(project => project === selected
-    ? { ...project, tagline: draft.value.trim() }
-    : project);
-  const file = new Blob([JSON.stringify(updated, null, 2) + '\n'], { type: 'application/json' });
-  const url = URL.createObjectURL(file);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'projects.json';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
+async function verifyRelease(projectId, tagline) {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try {
+      const response = await fetch(`/projects.json?release-check=${Date.now()}`, { cache: 'no-store' });
+      const current = response.ok && (await response.json()).find(item => item.id === projectId);
+      if (current?.tagline === tagline) return true;
+    } catch {
+      // A deployment can briefly be unavailable.
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+  return false;
+}
+
+async function release(isUndo) {
+  if (releasing || pending || !selected) return;
+  if (!access.value) {
+    releaseStatus.textContent = 'Enter the editor access code.';
+    access.focus();
+    return;
+  }
+  const project = selected;
+  const previous = project.tagline;
+  const tagline = isUndo ? lastRelease.get(project.id)?.previous : draft.value.trim();
+  if (!tagline || tagline === previous) return;
+  releasing = true;
+  projectSelect.disabled = draft.disabled = generate.disabled = reset.disabled = true;
+  updateDraft();
+  commitLink.hidden = liveLink.hidden = true;
+  releaseStatus.textContent = isUndo ? 'Restoring the previous intro…' : 'Publishing to GitHub…';
+
+  try {
+    const response = await fetch('/api/publish', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${access.value}`,
+      },
+      body: JSON.stringify({ projectId: project.id, previous, tagline, undo: isUndo }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+
+    if (isUndo) lastRelease.delete(project.id);
+    else lastRelease.set(project.id, { previous, tagline });
+    try {
+      sessionStorage.setItem('pixelpusher-releases', JSON.stringify([...lastRelease]));
+    } catch {
+      // Undo remains available in the current page.
+    }
+    project.tagline = tagline;
+    original.textContent = draft.value = tagline;
+    commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${result.commit}`;
+    commitLink.hidden = false;
+    releaseStatus.textContent = 'Saved to GitHub. Waiting for Vercel…';
+    updateDraft();
+
+    if (await verifyRelease(project.id, tagline)) {
+      releaseStatus.textContent = isUndo ? 'Previous intro restored on the beta site.' : 'Published on the beta site.';
+      liveLink.href = `/#/work/${encodeURIComponent(project.id)}`;
+      liveLink.hidden = false;
+    } else {
+      releaseStatus.textContent = 'Saved to GitHub. The beta URL has yet to show the change. Check Vercel Deployments.';
+    }
+  } catch (error) {
+    releaseStatus.textContent = error instanceof SyntaxError
+      ? 'Could not confirm publication. Check Vercel and GitHub before retrying.'
+      : error.message;
+  } finally {
+    releasing = false;
+    projectSelect.disabled = draft.disabled = generate.disabled = false;
+    updateDraft();
+  }
+}
+
+publish.addEventListener('click', () => release(false));
+undo.addEventListener('click', () => release(true));
 
 fetch('/projects.json')
   .then(response => {
