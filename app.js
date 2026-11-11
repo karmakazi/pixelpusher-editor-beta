@@ -80,7 +80,7 @@ function setupCopyAI() {
     <form hidden aria-label="Revise selected copy">
       <div class="copy-ai-heading">
         <label for="copy-ai-instruction">Revise copy</label>
-        <button type="button" data-close aria-label="Close AI prompt">×</button>
+        <button type="button" data-close aria-label="Close AI prompt"></button>
       </div>
       <textarea id="copy-ai-instruction" rows="2" maxlength="1500" required placeholder="Make it shorter"></textarea>
       <p role="status"></p>
@@ -172,6 +172,13 @@ function setupCopyAI() {
     open = true;
     refresh();
     instruction.focus();
+  });
+  instruction.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    if (!event.repeat && !submit.disabled && !submit.hidden && instruction.value.trim()) {
+      form.requestSubmit(submit);
+    }
   });
   form.addEventListener('submit', event => {
     event.preventDefault();
