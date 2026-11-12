@@ -1073,3 +1073,22 @@ footer a:hover { color: var(--off-white); }
 .portfolio-arrows button:disabled { opacity: .45; }
 .editor-preview .portfolio-select,
 .editor-preview .portfolio-arrows button:not(:disabled) { cursor: pointer !important; }
+
+.editor-preview .image-tools { z-index: 1001; }
+.case-video-editor {
+  padding: 1rem var(--gutter);
+  background: var(--black);
+  color: white;
+}
+.case-video-editor summary,
+.case-video-form button { cursor: pointer !important; }
+.case-video-form { margin-top: .75rem; }
+.case-video-form label { display: block; margin-bottom: .35rem; }
+.case-video-form input,
+.case-video-form button {
+  padding: .5rem;
+  border: 1px solid #777;
+  border-radius: 4px;
+  font: inherit;
+}
+.editor-preview .case-video-form input { cursor: text !important; }

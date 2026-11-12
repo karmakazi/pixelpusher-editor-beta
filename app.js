@@ -77,6 +77,23 @@ if (editorPreview) {
     const image = event.target.closest('[data-edit-image]');
     if (image) selectPreviewImage(image);
   });
+  document.addEventListener('submit', event => {
+    const form = event.target.closest('.case-video-form');
+    if (!form) return;
+    event.preventDefault();
+    const value = form.querySelector('input').value.trim();
+    const id = /^\d{1,15}$/.test(value) ? value :
+      /^https:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d{1,15})\/?(?:[?#].*)?$/.exec(value)?.[1];
+    if (!id) {
+      form.querySelector('[role="status"]').textContent = 'Enter a public Vimeo link or numeric video ID.';
+      return;
+    }
+    sendVideoEdit(id);
+  });
+
+  document.addEventListener('click', event => {
+    if (event.target.closest('[data-remove-video]')) sendVideoEdit('');
+  });
   document.addEventListener('keydown', event => {
     const image = event.target.closest('[data-edit-image]');
     if (image?.tagName === 'IMG' && (event.key === 'Enter' || event.key === ' ')) {
@@ -84,6 +101,11 @@ if (editorPreview) {
       selectPreviewImage(image);
     }
   });
+}
+
+function sendVideoEdit(value) {
+  if (casePreview?.locked) return;
+  window.parent.postMessage({ type: 'pixelpusher-video-edit', projectId: currentView.slice(5), value }, location.origin);
 }
 
 function selectPreviewImage(image) {
@@ -96,7 +118,7 @@ function selectPreviewImage(image) {
 }
 
 function updatePreviewAlt(projectId, values, changed) {
-  const stored = (portfolioPreview || PROJECTS).find(project => project.id === projectId);
+  const stored = caseProject(projectId);
   if (!stored) return;
   const project = CaseCopy.apply(stored, values);
   for (const field of changed) {
@@ -756,9 +778,23 @@ function renderWork() {
 }
 
 // ── RENDER: CASE STUDY ────────────────────────────────────
+function caseProject(id) {
+  return editorPreview && draftCaseId === id && /^draft-[a-f0-9-]{36}$/.test(id)
+    ? Portfolio.starter(id) : (portfolioPreview || PROJECTS).find(project => project.id === id);
+}
+
+function videoBlock(id) {
+  return `<div class="case-gallery-wide case-gallery-video r" data-vimeo="${CaseCopy.escape(id)}">
+    <div class="video-thumb"></div>
+    <button class="video-play" aria-label="Play video">
+      <span class="play-ring"><svg viewBox="0 0 40 40"><polygon points="14,10 32,20 14,30" fill="white"/></svg></span>
+      <span class="play-label">Play</span>
+    </button>
+  </div>`;
+}
+
 function renderCase(id, preserveScroll = false) {
-  const stored = editorPreview && draftCaseId === id && /^draft-[a-f0-9-]{36}$/.test(id)
-    ? Portfolio.starter(id) : (portfolioPreview || PROJECTS).find(x => x.id === id);
+  const stored = caseProject(id);
   const p = stored && casePreview?.projectId === id ? CaseCopy.apply(stored, casePreview.values) : stored;
 
   if (!p || p.comingSoon) {
@@ -784,16 +820,7 @@ function renderCase(id, preserveScroll = false) {
     if (g.wide) {
       if (!videoInserted && p.vimeoId) {
         videoInserted = true;
-        galleryBlocks.push(`
-      <div class="case-gallery-wide case-gallery-video r" data-vimeo="${p.vimeoId}">
-        <div class="video-thumb"></div>
-        <button class="video-play" aria-label="Play video">
-          <span class="play-ring">
-            <svg viewBox="0 0 40 40"><polygon points="14,10 32,20 14,30" fill="white"/></svg>
-          </span>
-          <span class="play-label">Play</span>
-        </button>
-      </div>`);
+        if (p.videoId === undefined && !editorPreview) galleryBlocks.push(videoBlock(p.vimeoId));
       } else {
         galleryBlocks.push(`
       <div class="case-gallery-wide r">
@@ -891,6 +918,20 @@ function renderCase(id, preserveScroll = false) {
         ${copyHtml}
       </div>
     </section>
+
+    ${editorPreview && !portfolioPreview ? `
+      <details class="case-video-editor">
+        <summary>${CaseCopy.read(p, 'video') ? 'Edit video' : 'Add video'}</summary>
+        <form class="case-video-form">
+          <label for="case-video-url">Vimeo URL or video ID</label>
+          <input id="case-video-url" maxlength="300" value="${CaseCopy.escape(CaseCopy.read(p, 'video'))}">
+          <button type="submit">Preview video</button>
+          ${CaseCopy.read(p, 'video') ? '<button type="button" data-remove-video>Remove video</button>' : ''}
+          <p role="status"></p>
+        </form>
+      </details>` : ''}
+    ${p.videoId || (editorPreview && p.videoId === undefined && p.vimeoId)
+      ? videoBlock(CaseCopy.read(p, 'video')) : ''}
 
     <div class="case-gallery">
       ${galleryBlocks.join('')}

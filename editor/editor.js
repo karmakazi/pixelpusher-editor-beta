@@ -221,19 +221,22 @@ function positionImageTools() {
   imageTools.style.top = `${Math.max(8, Math.min(top, viewport.innerHeight - height - 8))}px`;
 }
 
-function closeImageTools() {
+function closeImageTools(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  imageTools.hidden = true;
   const anchor = preview.contentDocument?.querySelector(
     imageSelection === 'hero' ? '.edit-hero-image' : `[data-edit-image="${imageSelection}"]`
   );
   revision++;
   imageSelection = null;
   showField();
-  anchor?.focus();
+  anchor?.focus({ preventScroll: true });
 }
 
 closeImage.addEventListener('click', closeImageTools);
 imageTools.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeImageTools();
+  if (event.key === 'Escape') closeImageTools(event);
 });
 const imageToolsResize = new ResizeObserver(positionImageTools);
 imageToolsResize.observe(imageControls);
@@ -330,6 +333,14 @@ window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing) return;
   const { type, projectId, field, paragraph, value, image } = event.data || {};
   if (projectId !== selected.id) return;
+  if (type === 'pixelpusher-video-edit') {
+    if (CaseCopy.valid('video', value)) {
+      revision++;
+      stageField('video', value);
+      updateDraft();
+    }
+    return;
+  }
   if (type === 'pixelpusher-image-select') {
     if (typeof image !== 'string' || !CaseCopy.hasField(selected, `${image}:url`)) return;
     if (imageSelection === image) return;
@@ -386,7 +397,7 @@ function clearFiles() {
   for (const key of imageFiles.keys()) removeFile(key);
 }
 
-function stageImageField(field, value) {
+function stageField(field, value) {
   if (value === CaseCopy.read(selected, field)) delete edits[field];
   else edits[field] = value;
 }
@@ -435,7 +446,7 @@ removeImage.addEventListener('click', () => {
 
 imageAlt.addEventListener('input', () => {
   const field = `${imageSelection}:alt`;
-  stageImageField(field, imageAlt.value.trim());
+  stageField(field, imageAlt.value.trim());
   updateDraft();
 });
 
@@ -468,8 +479,8 @@ imageControls.addEventListener('submit', async event => {
   }
   if (revision !== requestedRevision || releasing || selected !== project || imageSelection !== key) return;
   removeFile(`${key}:url`);
-  stageImageField(`${key}:url`, url);
-  stageImageField(`${key}:alt`, alt);
+  stageField(`${key}:url`, url);
+  stageField(`${key}:alt`, alt);
   showField();
   updateDraft();
   imageStatus.textContent = 'Image preview updated.';

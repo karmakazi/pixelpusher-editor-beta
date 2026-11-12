@@ -40,6 +40,7 @@ const Portfolio = ((CaseCopy) => {
       gallery: [
         { wide: false, src: placeholder, alt: 'Gallery image placeholder' },
         { wide: false, src: placeholder, alt: 'Gallery image placeholder' },
+        { wide: true, src: placeholder, alt: 'Gallery image placeholder' },
       ],
       comingSoon: false,
     };

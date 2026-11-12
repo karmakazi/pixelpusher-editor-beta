@@ -24,6 +24,7 @@ const CaseCopy = (() => {
   }
 
   function definition(field) {
+    if (field === 'video') return { label: 'Video', max: 15 };
     if (Object.hasOwn(fields, field)) return fields[field];
     const image = imageField(field);
     if (!image) return null;
@@ -32,7 +33,7 @@ const CaseCopy = (() => {
   }
 
   function hasField(project, field) {
-    if (Object.hasOwn(fields, field)) return true;
+    if (field === 'video' || Object.hasOwn(fields, field)) return true;
     const image = imageField(field);
     return Boolean(image && (image.index === null || (project.gallery[image.index] &&
       (!project.vimeoId || image.index !== project.gallery.findIndex(item => item.wide)))));
@@ -51,6 +52,7 @@ const CaseCopy = (() => {
   }
 
   function read(project, field) {
+    if (field === 'video') return project.videoId ?? project.vimeoId ?? '';
     const image = imageField(field);
     if (image) {
       if (image.index === null) return (image.type === 'url' ? project.heroImg : project.heroAlt) ?? '';
@@ -67,6 +69,7 @@ const CaseCopy = (() => {
   function valid(field, value) {
     const details = definition(field);
     if (!details || typeof value !== 'string') return false;
+    if (field === 'video') return /^\d{0,15}$/.test(value);
     if (imageField(field)?.type === 'url') return validImageUrl(value);
     const { max, required, list } = details;
     return value.length <= max && (!required || Boolean(value.trim())) &&
@@ -91,7 +94,9 @@ const CaseCopy = (() => {
     for (const [field, value] of Object.entries(values)) {
       const text = encode(value);
       const image = imageField(field);
-      if (image) {
+      if (field === 'video') {
+        updated.videoId = value;
+      } else if (image) {
         if (image.index === null) {
           updated[image.type === 'url' ? 'heroImg' : 'heroAlt'] = value;
         } else {
