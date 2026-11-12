@@ -546,6 +546,23 @@ async function verifyRelease(projectId, changes) {
   return false;
 }
 
+function showReleaseCommit(commit) {
+  commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${commit}`;
+  commitLink.hidden = false;
+  releaseStatus.textContent = 'Saved to GitHub. Waiting for Vercel…';
+}
+
+function showReleaseResult(live, restored, href, label) {
+  if (!live) {
+    releaseStatus.textContent = 'Saved to GitHub. The beta URL has yet to show the change. Check Vercel Deployments.';
+    return;
+  }
+  releaseStatus.textContent = restored ? 'Previous version restored on the beta site.' : 'Published on the beta site.';
+  liveLink.href = href;
+  liveLink.textContent = `View live ${label} ↗`;
+  liveLink.hidden = false;
+}
+
 async function release(isUndo) {
   if (releasing || pending || checkingImages > 0 || !selected || (isUndo && suggestion !== null)) return;
   const project = selected;
@@ -598,20 +615,15 @@ async function release(isUndo) {
     suggestion = null;
     aiNote = '';
     showField();
-    commitLink.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${result.commit}`;
-    commitLink.hidden = false;
-    releaseStatus.textContent = 'Saved to GitHub. Waiting for Vercel…';
+    showReleaseCommit(result.commit);
     updateDraft();
 
-    if (await verifyRelease(project.id, expectedOnSite)) {
+    const live = await verifyRelease(project.id, expectedOnSite);
+    if (live) {
       awaitingDeployment.delete(project.id);
       preview.src = `/?editor-preview=1&release=${result.commit}&refresh=${Date.now()}#/work/${encodeURIComponent(project.id)}`;
-      releaseStatus.textContent = isUndo ? 'Previous copy restored on the beta site.' : 'Published on the beta site.';
-      liveLink.href = `/#/work/${encodeURIComponent(project.id)}`;
-      liveLink.hidden = false;
-    } else {
-      releaseStatus.textContent = 'Saved to GitHub. The beta URL has yet to show the change. Check Vercel Deployments.';
     }
+    showReleaseResult(live, isUndo, `/#/work/${encodeURIComponent(project.id)}`, 'case study');
   } catch (error) {
     if (error.status === 401) return sessionExpired();
     releaseStatus.textContent = error instanceof SyntaxError
@@ -662,7 +674,6 @@ let newFile;
 let uploadedHero;
 let portfolioUndo;
 let portfolioView;
-let portfolioCommit;
 let portfolioBase;
 let selectedCard;
 
@@ -745,6 +756,8 @@ openPortfolio.onclick = () => {
   aiNote = '';
   imageSelection = null;
   positionImageTools();
+  releaseStatus.textContent = '';
+  commitLink.hidden = liveLink.hidden = true;
   portfolioList.value = 'work';
   caseControls.hidden = openPortfolio.hidden = true;
   portfolioControls.hidden = false;
@@ -815,19 +828,23 @@ async function releasePortfolio(undoing) {
   if (releasing || (undoing ? !portfolioUndo || portfolioDirty() : !portfolioDirty())) return;
   const before = Portfolio.order(projects);
   const createdId = newProject?.id;
+  const featured = portfolioList.value === 'featured';
   releasing = true;
+  commitLink.hidden = liveLink.hidden = true;
+  portfolioStatus.textContent = '';
+  releaseStatus.textContent = undoing ? 'Restoring the previous version…' : 'Publishing to GitHub…';
   renderPortfolio();
   try {
     const change = undoing ? { before, ...portfolioUndo } : { before, after: lists };
     if (!undoing && newProject) {
       if (newFile) {
-        portfolioStatus.textContent = 'Uploading hero image…';
+        releaseStatus.textContent = 'Uploading hero image…';
         const { uploadImage } = await import('/editor/image-upload.bundle.js');
         uploadedHero ??= await uploadImage(newFile.file);
       }
       change.newProject = { ...newProject, image: uploadedHero ?? newProject.image };
     }
-    portfolioStatus.textContent = 'Publishing to GitHub…';
+    releaseStatus.textContent = 'Publishing to GitHub…';
     const response = await fetch('/api/publish', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ portfolio: change }),
@@ -836,7 +853,6 @@ async function releasePortfolio(undoing) {
     const result = await response.json();
     if (!response.ok) throw Error(result.error);
     projects = result.projects;
-    portfolioCommit = result.commit;
     portfolioUndo = undoing ? null : {
       after: before,
       ...(createdId ? { removeProject: projects.find(project => project.id === createdId) } : {}),
@@ -844,19 +860,14 @@ async function releasePortfolio(undoing) {
     portfolioBase = projects;
     resetPortfolioDraft();
     loadProjectOptions(createdId ?? selected?.id);
-    portfolioStatus.replaceChildren('Saved to GitHub. Vercel is deploying. ');
-    const link = document.createElement('a');
-    link.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${portfolioCommit}`;
-    link.textContent = 'View commit';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    portfolioStatus.append(link);
+    showReleaseCommit(result.commit);
+    let live = false;
     const expected = JSON.stringify(Portfolio.order(projects));
     for (let attempt = 0; attempt < 30; attempt++) {
       try {
         const deployed = await fetch(`/projects.json?portfolio=${Date.now()}`, { cache: 'no-store' });
         if (deployed.ok && JSON.stringify(Portfolio.order(await deployed.json())) === expected) {
-          portfolioStatus.firstChild.textContent = undoing ? 'Previous portfolio restored. ' : 'Portfolio is live on the beta site. ';
+          live = true;
           break;
         }
       } catch {
@@ -864,12 +875,13 @@ async function releasePortfolio(undoing) {
       }
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
-    if (portfolioStatus.firstChild.textContent.startsWith('Saved')) {
-      portfolioStatus.firstChild.textContent = 'Saved to GitHub. Check Vercel for deployment status. ';
-    }
+    const href = createdId ? `/#/work/${encodeURIComponent(createdId)}` : featured ? '/#work' : '/#/work';
+    showReleaseResult(live, undoing, href, createdId ? 'case study' : featured ? 'homepage' : 'portfolio');
   } catch (error) {
     if (error.status === 401) return sessionExpired();
-    portfolioStatus.textContent = error.message;
+    releaseStatus.textContent = error instanceof SyntaxError
+      ? 'Could not confirm publication. Check Vercel and GitHub before retrying.'
+      : error.message;
   } finally {
     releasing = false;
     renderPortfolio();

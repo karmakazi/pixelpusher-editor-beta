@@ -1044,10 +1044,6 @@ footer a:hover { color: var(--off-white); }
 .image-tools details button { margin-top: 6px; }
 .image-tools #chosen-image { overflow-wrap: anywhere; }
 
-.portfolio-card:has(.portfolio-select[aria-pressed="true"]) {
-  outline: 2px solid #d9f36c;
-  outline-offset: -2px;
-}
 .portfolio-select {
   position: absolute;
   inset: 0;

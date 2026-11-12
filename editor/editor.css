@@ -44,6 +44,5 @@ iframe.mobile { width: min(100%, 390px); }
 #new-case summary { cursor: pointer; padding: .55rem 0; }
 #new-case-form button { margin-top: .8rem; }
 #portfolio-status { font-size: .85rem; line-height: 1.5; }
-#portfolio-status a { color: #d9f36c; }
 
 #portfolio-options button { margin-top: .55rem; }
