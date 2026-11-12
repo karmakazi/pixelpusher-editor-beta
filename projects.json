@@ -1,5 +1,68 @@
 [
   {
+    "id": "colgate-totally-honest",
+    "client": "Colgate",
+    "title": "Totally Honest",
+    "titleLines": [
+      "Totally",
+      "Honest"
+    ],
+    "category": "Brand &amp; Campaign",
+    "featured": true,
+    "featuredOrder": 1,
+    "featuredWide": true,
+    "wide": true,
+    "vimeoId": "925868287",
+    "thumbSeed": "colgate-pp",
+    "heroSeed": "colgate-hero",
+    "heroImg": "img/colgate-hero.png",
+    "tagline": "We built a confession booth that made a century-old brand feel radically honest.",
+    "pullQuote": "Everyone has a dental secret. We just gave them a place to confess it — live, on camera, in the Flatiron District.",
+    "copy": [
+      "BCW challenged us to make Colgate’s ‘Totally Honest’ campaign tangible. The insight was simple and uncomfortable: everyone lies to their dentist. Our answer was a custom video booth installed in New York’s Flatiron District, where passersby could step inside and anonymously confess their worst dental habits — on camera. AI face tracking replaced participants’ faces with the iconic Colgate dot while an animated smile mirrored their mouth movements in real time.",
+      "The result was something between a confessional and a comedy set — authentic, disarming, and completely on-brand. Content from the activation seeded across digital and social, turning New York’s honesty into Colgate’s most shareable campaign in years."
+    ],
+    "gallery": [
+      {
+        "wide": true,
+        "seed": "colgate-wide1",
+        "alt": "Totally Honest booth installation"
+      },
+      {
+        "wide": false,
+        "seed": "colgate-a",
+        "alt": "AI face tracking detail",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/bc3ec61c-2140-499a-9c41-3ccf0842a177-O4wBK3Ox5CrV9uy7l3KVeCNA1I7ABg.png"
+      },
+      {
+        "wide": false,
+        "seed": "colgate-b",
+        "alt": "Participant moment",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/53551ec6-6ed4-4225-87d1-eec7bae03b97-NdIDLe4HiYddBreZMlwUhrWT6yg66p.png"
+      },
+      {
+        "wide": true,
+        "seed": "colgate-wide2",
+        "alt": "Flatiron District activation",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/c5a538ff-4342-46d3-8f14-b76d37240179-YTW0LfkwlvMkUdDuFbeUsx3X1hRM2V.jpg"
+      }
+    ],
+    "meta": {
+      "year": "2024",
+      "client": "Colgate-Palmolive",
+      "services": [
+        "Experiential Design",
+        "Interactive Technology",
+        "Content Production"
+      ],
+      "industry": "Consumer Goods",
+      "agency": "BCW",
+      "productionCo": "The Deli"
+    },
+    "nextProject": "cadillac-be-iconic",
+    "comingSoon": false
+  },
+  {
     "id": "cadillac-be-iconic",
     "client": "Cadillac",
     "title": "Be Iconic",
@@ -122,69 +185,6 @@
       "productionCo": null
     },
     "nextProject": "rick-hansen-poster-for-everyone",
-    "comingSoon": false
-  },
-  {
-    "id": "colgate-totally-honest",
-    "client": "Colgate",
-    "title": "Totally Honest",
-    "titleLines": [
-      "Totally",
-      "Honest"
-    ],
-    "category": "Brand &amp; Campaign",
-    "featured": true,
-    "featuredOrder": 1,
-    "featuredWide": true,
-    "wide": true,
-    "vimeoId": "925868287",
-    "thumbSeed": "colgate-pp",
-    "heroSeed": "colgate-hero",
-    "heroImg": "img/colgate-hero.png",
-    "tagline": "We built a confession booth that made a century-old brand feel radically honest.",
-    "pullQuote": "Everyone has a dental secret. We just gave them a place to confess it — live, on camera, in the Flatiron District.",
-    "copy": [
-      "BCW challenged us to make Colgate’s ‘Totally Honest’ campaign tangible. The insight was simple and uncomfortable: everyone lies to their dentist. Our answer was a custom video booth installed in New York’s Flatiron District, where passersby could step inside and anonymously confess their worst dental habits — on camera. AI face tracking replaced participants’ faces with the iconic Colgate dot while an animated smile mirrored their mouth movements in real time.",
-      "The result was something between a confessional and a comedy set — authentic, disarming, and completely on-brand. Content from the activation seeded across digital and social, turning New York’s honesty into Colgate’s most shareable campaign in years."
-    ],
-    "gallery": [
-      {
-        "wide": true,
-        "seed": "colgate-wide1",
-        "alt": "Totally Honest booth installation"
-      },
-      {
-        "wide": false,
-        "seed": "colgate-a",
-        "alt": "AI face tracking detail",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/bc3ec61c-2140-499a-9c41-3ccf0842a177-O4wBK3Ox5CrV9uy7l3KVeCNA1I7ABg.png"
-      },
-      {
-        "wide": false,
-        "seed": "colgate-b",
-        "alt": "Participant moment",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/53551ec6-6ed4-4225-87d1-eec7bae03b97-NdIDLe4HiYddBreZMlwUhrWT6yg66p.png"
-      },
-      {
-        "wide": true,
-        "seed": "colgate-wide2",
-        "alt": "Flatiron District activation",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/c5a538ff-4342-46d3-8f14-b76d37240179-YTW0LfkwlvMkUdDuFbeUsx3X1hRM2V.jpg"
-      }
-    ],
-    "meta": {
-      "year": "2024",
-      "client": "Colgate-Palmolive",
-      "services": [
-        "Experiential Design",
-        "Interactive Technology",
-        "Content Production"
-      ],
-      "industry": "Consumer Goods",
-      "agency": "BCW",
-      "productionCo": "The Deli"
-    },
-    "nextProject": "cadillac-be-iconic",
     "comingSoon": false
   },
   {
