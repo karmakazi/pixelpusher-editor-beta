@@ -1043,3 +1043,37 @@ footer a:hover { color: var(--off-white); }
 .image-tools details { margin-top: 10px; }
 .image-tools details button { margin-top: 6px; }
 .image-tools #chosen-image { overflow-wrap: anywhere; }
+
+.portfolio-card:has(.portfolio-select[aria-pressed="true"]) {
+  outline: 2px solid #d9f36c;
+  outline-offset: -2px;
+}
+.portfolio-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+.portfolio-select:focus-visible { outline: 2px solid white; outline-offset: -4px; }
+.portfolio-arrows {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+.portfolio-arrows button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid #d9f36c;
+  border-radius: 5px;
+  background: #171a0b;
+  color: #d9f36c;
+  font: 650 13px system-ui, sans-serif;
+}
+.portfolio-arrows button:disabled { opacity: .45; }
+.editor-preview .portfolio-select,
+.editor-preview .portfolio-arrows button:not(:disabled) { cursor: pointer !important; }

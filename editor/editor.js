@@ -649,7 +649,7 @@ const caseControls = document.querySelector('#case-controls');
 const openPortfolio = document.querySelector('#open-portfolio');
 const backToEditor = document.querySelector('#back-to-editor');
 const portfolioList = document.querySelector('#portfolio-list');
-const portfolioOrder = document.querySelector('#portfolio-order');
+const portfolioOptions = document.querySelector('#portfolio-options');
 const portfolioStatus = document.querySelector('#portfolio-status');
 const publishPortfolio = document.querySelector('#publish-portfolio');
 const undoPortfolio = document.querySelector('#undo-portfolio');
@@ -664,10 +664,12 @@ let portfolioUndo;
 let portfolioView;
 let portfolioCommit;
 let portfolioBase;
+let selectedCard;
 
 function resetPortfolioDraft() {
   newCaseForm.reset();
   delete newCaseForm.elements.id.dataset.manual;
+  selectedCard = null;
   lists = Portfolio.order(projects);
   newProject = null;
   if (newFile) URL.revokeObjectURL(newFile.previewUrl);
@@ -678,7 +680,7 @@ function resetPortfolioDraft() {
 function previewPortfolio() {
   if (portfolioControls.hidden) return;
   preview.contentWindow?.postMessage({
-    type: 'pixelpusher-portfolio-preview', lists, newProject, view: portfolioView, base: portfolioBase,
+    type: 'pixelpusher-portfolio-preview', lists, newProject, view: portfolioView, base: portfolioBase, selectedCard, locked: releasing,
   }, location.origin);
 }
 
@@ -690,44 +692,7 @@ function renderPortfolio() {
   const key = portfolioList.value;
   const ids = lists[key];
   const candidates = newProject ? [...projects, newProject] : projects;
-  portfolioOrder.replaceChildren();
-  for (const [index, id] of ids.entries()) {
-    const item = candidates.find(project => project.id === id);
-    const row = document.createElement('li');
-    const title = document.createElement('span');
-    title.textContent = item === newProject ? item.title : CaseCopy.read(item, 'title').replaceAll('\n', ' ');
-    row.append(title);
-    for (const [label, offset] of [['Move up', -1], ['Move down', 1]]) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'secondary';
-      button.textContent = offset < 0 ? '↑' : '↓';
-      button.setAttribute('aria-label', `${label}: ${title.textContent}`);
-      button.disabled = releasing || !ids[index + offset];
-      button.onclick = () => {
-        [ids[index], ids[index + offset]] = [ids[index + offset], ids[index]];
-        portfolioView = key;
-        renderPortfolio();
-        const buttons = portfolioOrder.children[index + offset].querySelectorAll('button');
-        (buttons[offset < 0 ? 0 : 1].disabled ? buttons[offset < 0 ? 1 : 0] : buttons[offset < 0 ? 0 : 1]).focus();
-      };
-      row.append(button);
-    }
-    if (key === 'featured') {
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'secondary';
-      remove.textContent = 'Remove';
-      remove.disabled = releasing;
-      remove.onclick = () => {
-        ids.splice(index, 1);
-        portfolioView = key;
-        renderPortfolio();
-      };
-      row.append(remove);
-    }
-    portfolioOrder.append(row);
-  }
+  portfolioOptions.replaceChildren();
   if (key === 'featured') {
     const add = document.createElement('select');
     add.setAttribute('aria-label', 'Feature a project');
@@ -742,19 +707,15 @@ function renderPortfolio() {
       portfolioView = key;
       renderPortfolio();
     };
-    const row = document.createElement('li');
-    row.append(add);
-    portfolioOrder.append(row);
+    portfolioOptions.append(add);
   }
   if (newProject) {
-    const row = document.createElement('li');
     const view = document.createElement('button');
     view.type = 'button';
     view.className = 'secondary';
     view.textContent = 'Preview new case study';
     view.onclick = () => { portfolioView = 'new'; previewPortfolio(); };
-    row.append(view);
-    portfolioOrder.append(row);
+    portfolioOptions.append(view);
   }
   publishPortfolio.disabled = releasing || !portfolioDirty();
   undoPortfolio.disabled = releasing || portfolioDirty() || !portfolioUndo;
@@ -793,7 +754,7 @@ backToEditor.onclick = () => {
   selectProject();
 };
 
-portfolioList.onchange = () => { portfolioView = portfolioList.value; renderPortfolio(); };
+portfolioList.onchange = () => { selectedCard = null; portfolioView = portfolioList.value; renderPortfolio(); };
 resetPortfolio.onclick = () => { resetPortfolioDraft(); renderPortfolio(); };
 
 newCaseForm.elements.title.addEventListener('input', () => {
@@ -910,3 +871,26 @@ async function releasePortfolio(undoing) {
 publishPortfolio.onclick = () => releasePortfolio(false);
 undoPortfolio.onclick = () => releasePortfolio(true);
 preview.addEventListener('load', previewPortfolio);
+
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== preview.contentWindow ||
+      portfolioControls.hidden || releasing) return;
+  const { type, id, action } = event.data || {};
+  if (type !== 'pixelpusher-portfolio-card' || portfolioView === 'new') return;
+  const ids = lists[portfolioView];
+  const index = ids.indexOf(id);
+  if (index < 0) return;
+  if (action === 'select') {
+    selectedCard = id;
+  } else if (id === selectedCard) {
+    if (action === 'remove' && portfolioView === 'featured') {
+      ids.splice(index, 1);
+      selectedCard = null;
+    } else if (action === 'up' || action === 'down') {
+      const next = index + (action === 'up' ? -1 : 1);
+      if (!ids[next]) return;
+      [ids[index], ids[next]] = [ids[next], ids[index]];
+    } else return;
+  } else return;
+  renderPortfolio();
+});

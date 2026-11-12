@@ -6,6 +6,8 @@ let currentView = null;
 let revealObs = null;
 let casePreview = null;
 let portfolioPreview = null;
+let portfolioSelectedCard = null;
+let portfolioLocked = false;
 let refreshCopyAI;
 const editorPreview = window.parent !== window && new URLSearchParams(location.search).has('editor-preview');
 
@@ -15,15 +17,19 @@ if (editorPreview) {
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
     if (event.data?.type === 'pixelpusher-portfolio-preview') {
-      const { lists, newProject, view, base } = event.data;
+      const { lists, newProject, view, base, selectedCard, locked } = event.data;
       if (!['work', 'featured', 'new'].includes(view)) return;
       try {
         const created = newProject ? Portfolio.create(newProject, location.origin) : null;
         const projects = Array.isArray(base) ? base : PROJECTS;
         portfolioPreview = Portfolio.arrange(created ? [...projects, created] : projects, lists);
-        if (view === 'work') renderWork();
-        else if (view === 'featured') renderHome();
-        else if (created) renderCase(created.id);
+        portfolioSelectedCard = selectedCard;
+        portfolioLocked = locked;
+        if (view === 'new') {
+          if (created) renderCase(created.id);
+        } else {
+          renderPortfolioGrid(view);
+        }
       } catch {
         // The editor and preview can briefly have different deployed revisions.
       }
@@ -45,6 +51,13 @@ if (editorPreview) {
       if (altOnly) updatePreviewAlt(projectId, values, changed);
       syncEditableCopy();
     }
+  });
+
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-portfolio-action]');
+    if (!portfolioPreview || portfolioLocked || !button) return;
+    const id = button.closest('[data-portfolio-card]').dataset.portfolioCard;
+    window.parent.postMessage({ type: 'pixelpusher-portfolio-card', id, action: button.dataset.portfolioAction }, location.origin);
   });
 
   document.addEventListener('focusin', event => {
@@ -352,20 +365,19 @@ function galleryUrl(seed, wide) {
 /**
  * Render a work card for grid display.
  * @param {Object} p        - project object
- * @param {boolean} isHome  - true = use featuredWide flag; false = use wide flag
+ * @param {boolean} wide    - use the wide landscape slot
  * @param {boolean} eager   - true = loading="eager"
  * @param {string} delay    - CSS delay class ('d1', 'd2', or '')
  */
-function workCard(p, isHome, eager, delay) {
-  const wide    = isHome ? p.featuredWide : p.wide;
+function workCard(p, wide, eager, delay, slot) {
   const locked  = p.comingSoon;
-  const tag     = locked ? 'div' : 'a';
-  const href    = locked ? '' : `href="#/work/${p.id}"`;
+  const tag     = locked || slot ? 'div' : 'a';
+  const href    = tag === 'div' ? '' : `href="#/work/${p.id}"`;
   const classes = [
     'work-item',
     wide   ? 'work-item--wide'   : '',
     locked ? 'work-item--locked' : '',
-    'r',
+    slot ? 'portfolio-card' : 'r',
     delay  || '',
   ].filter(Boolean).join(' ');
   const loading = eager ? 'eager' : 'lazy';
@@ -373,14 +385,24 @@ function workCard(p, isHome, eager, delay) {
     ? '<span class="work-soon">Coming Soon</span>'
     : '<span class="work-cta">View \u2192</span>';
 
+  const picked = slot && p.id === portfolioSelectedCard;
+  const cardControls = slot ? `
+    <button class="portfolio-select" type="button" data-portfolio-action="select"
+      aria-label="Select ${p.title}" aria-pressed="${Boolean(picked)}"${portfolioLocked ? ' disabled' : ''}></button>
+    ${picked ? `<div class="portfolio-arrows">
+      <button type="button" data-portfolio-action="up" aria-label="Move ${p.title} up"${portfolioLocked || slot.first ? ' disabled' : ''}>↑</button>
+      <button type="button" data-portfolio-action="down" aria-label="Move ${p.title} down"${portfolioLocked || slot.last ? ' disabled' : ''}>↓</button>
+      ${slot.featured ? `<button type="button" data-portfolio-action="remove"${portfolioLocked ? ' disabled' : ''}>Remove from homepage</button>` : ''}
+    </div>` : ''}` : '';
+
   return `
-    <${tag} ${href} class="${classes}">
+    <${tag} ${href} class="${classes}"${slot ? ` data-portfolio-card="${p.id}"` : ''}>
       <img src="${CaseCopy.escape(p.heroImg || thumbUrl(p.thumbSeed, wide))}" alt="${p.client} \u2014 ${p.title}" loading="${loading}" />
       <div class="work-caption">
         <p class="work-client">${p.client}</p>
         <p class="work-title">${p.title}</p>
       </div>
-      ${badge}
+      ${slot ? cardControls : badge}
     </${tag}>`;
 }
 
@@ -391,7 +413,7 @@ function workCard(p, isHome, eager, delay) {
 function buildGrid(projects, isHome) {
   let col = 0; // tracks left(0) / right(1) column position
   return projects.map((p, i) => {
-    const wide = isHome ? p.featuredWide : p.wide;
+    const wide = i % 5 === 0;
     let delay = '';
     if (!wide) {
       delay = col === 0 ? '' : 'd1';
@@ -400,8 +422,34 @@ function buildGrid(projects, isHome) {
       col = 0; // wide spans full row, reset
     }
     const eager = isHome && i === 0; // first card loads eagerly
-    return workCard(p, isHome, eager, delay);
+    const slot = portfolioPreview && { first: i === 0, last: i === projects.length - 1, featured: isHome };
+    return workCard(p, wide, eager, delay, slot);
   }).join('');
+}
+
+function renderPortfolioGrid(view) {
+  const featured = view === 'featured';
+  const sameView = currentView === (featured ? 'home' : 'work');
+  const cards = featured
+    ? Portfolio.order(portfolioPreview).featured.map(id => portfolioPreview.find(project => project.id === id))
+    : portfolioPreview;
+  const focusedAction = document.activeElement?.dataset.portfolioAction;
+  const grid = document.querySelector('.work-grid');
+  if (sameView && grid) grid.innerHTML = buildGrid(cards, featured);
+  else if (featured) {
+    renderHome();
+    document.querySelector('#work')?.scrollIntoView();
+  } else {
+    renderWork();
+    document.querySelector('.work-grid')?.scrollIntoView();
+  }
+  if (!portfolioSelectedCard) return;
+  const card = document.querySelector(`[data-portfolio-card="${portfolioSelectedCard}"]`);
+  card?.scrollIntoView({ block: 'nearest' });
+  if (focusedAction && card) {
+    const button = card.querySelector(`[data-portfolio-action="${focusedAction}"]`);
+    (button && !button.disabled ? button : card.querySelector('.portfolio-select'))?.focus({ preventScroll: true });
+  }
 }
 
 function initReveal() {
