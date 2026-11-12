@@ -17,12 +17,16 @@ if (editorPreview) {
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
         !Object.entries(values).every(([field, value]) => CaseCopy.validPreview(field, value, location.origin))) return;
-    const changed = casePreview?.projectId !== projectId || JSON.stringify(casePreview.values) !== JSON.stringify(values);
+    const previous = casePreview?.projectId === projectId ? casePreview.values : {};
+    const changed = [...new Set([...Object.keys(previous), ...Object.keys(values)])]
+      .filter(field => previous[field] !== values[field]);
     casePreview = { projectId, values, selection, locked, ai, image };
     if (currentView !== `case:${projectId}`) return;
-    if (changed && !(inline && document.activeElement?.matches('[data-copy-field]'))) {
+    const altOnly = changed.length > 0 && changed.every(field => field.endsWith(':alt'));
+    if (changed.length && !altOnly && !(inline && document.activeElement?.matches('[data-copy-field]'))) {
       renderCase(projectId, true);
     } else {
+      if (altOnly) updatePreviewAlt(projectId, values, changed);
       syncEditableCopy();
     }
   });
@@ -59,6 +63,21 @@ function selectPreviewImage(image) {
     projectId: currentView.slice(5),
     image: image.dataset.editImage,
   }, location.origin);
+}
+
+function updatePreviewAlt(projectId, values, changed) {
+  const stored = PROJECTS.find(project => project.id === projectId);
+  if (!stored) return;
+  const project = CaseCopy.apply(stored, values);
+  for (const field of changed) {
+    const key = field.slice(0, -4);
+    const image = document.querySelector(`img[data-edit-image="${key}"]`);
+    if (!image) continue;
+    const alt = CaseCopy.read(project, field);
+    image.alt = key === 'hero' && !alt
+      ? `${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`
+      : alt;
+  }
 }
 
 function editableImage(key, label) {
