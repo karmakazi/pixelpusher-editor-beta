@@ -129,7 +129,10 @@
     "id": "nine-twelve-reconnecting-new-york",
     "client": "9/12",
     "title": "Reconnecting New York",
-    "titleLines": ["Reconnecting", "New York"],
+    "titleLines": [
+      "Reconnecting",
+      "New York"
+    ],
     "category": "Campaign",
     "featured": false,
     "featuredWide": false,
@@ -138,22 +141,45 @@
     "thumbSeed": "912-nyc",
     "heroSeed": "912-nyc-hero",
     "heroImg": "img/9-12-hero.png",
-    "tagline": "The story of September 12th, told through text messages \u2014 exactly as it happened, twenty years later.",
-    "pullQuote": "In 2001 the most innovative way to communicate was a text message. In 2021 it\u2019s the most personal.",
+    "tagline": "The story of September 12th, told through text messages — exactly as it happened, twenty years later.",
+    "pullQuote": "In 2001 the most innovative way to communicate was a text message. In 2021 it’s the most personal.",
     "copy": [
-      "Unit 9 brought us the brief of a lifetime: tell the untold story of the Verizon employees who kept New York connected in the days after September 11th \u2014 and tell it in a format nobody had used before. The medium was the message: text messages. We interviewed over 30 Verizon employees from that week, built a precise timeline, and delivered 11 personal stories to participants on September 12th, 2021 \u2014 at the exact times the events had occurred twenty years earlier. Each text unlocked immersive phone call reenactments, 360\u00b0 interactive maps of downtown Manhattan, and AR before-and-after filters of the structural damage to Verizon\u2019s headquarters.",
-      "Behind the scenes, we used Twilio-driven SMS to simultaneously push high-volume multimedia content to thousands of participants in real time \u2014 a technical challenge that had never been attempted at this scale. The project won the Cannes Gold Lion, One Show Gold Pencil, Clio Gold, and Webby Award."
+      "Unit 9 brought us the brief of a lifetime: tell the untold story of the Verizon employees who kept New York connected in the days after September 11th — and tell it in a format nobody had used before. The medium was the message: text messages. We interviewed over 30 Verizon employees from that week, built a precise timeline, and delivered 11 personal stories to participants on September 12th, 2021 — at the exact times the events had occurred twenty years earlier. Each text unlocked immersive phone call reenactments, 360° interactive maps of downtown Manhattan, and AR before-and-after filters of the structural damage to Verizon’s headquarters.",
+      "Behind the scenes, we used Twilio-driven SMS to simultaneously push high-volume multimedia content to thousands of participants in real time — a technical challenge that had never been attempted at this scale. The project won the Cannes Gold Lion, One Show Gold Pencil, Clio Gold, and Webby Award."
     ],
     "gallery": [
-      { "wide": true,  "seed": "912-wide1", "alt": "9/12 SMS documentary experience" },
-      { "wide": false, "seed": "912-a",     "alt": "Text message interface" },
-      { "wide": false, "seed": "912-b",     "alt": "360\u00b0 Manhattan map" },
-      { "wide": true,  "seed": "912-wide2", "alt": "AR before-and-after filter" }
+      {
+        "wide": true,
+        "seed": "912-wide1",
+        "alt": "9/12 SMS documentary experience"
+      },
+      {
+        "wide": false,
+        "seed": "912-a",
+        "alt": "Text message interface",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/ade5f2b2-ec05-482f-befd-d91d6131525d-9LR6uwm5qVaKpVDHLdHRpxYs0bLnYV.jpg"
+      },
+      {
+        "wide": false,
+        "seed": "912-b",
+        "alt": "360° Manhattan map",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/76f99aaf-6c19-4d2f-b27b-630152e1f850-BCeqVsy8Xue0kRHPa2jb6lvKyFBmj6.png"
+      },
+      {
+        "wide": true,
+        "seed": "912-wide2",
+        "alt": "AR before-and-after filter",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/77af9f4a-afcd-4368-adcd-221f19008167-LxCf53BS9Bv3pokvEn0S8ftknMkwXU.jpg"
+      }
     ],
     "meta": {
       "year": "2021",
       "client": "Verizon",
-      "services": ["Interactive Documentary", "SMS Technology", "AR &amp; WebGL"],
+      "services": [
+        "Interactive Documentary",
+        "SMS Technology",
+        "AR &amp; WebGL"
+      ],
       "industry": "Telecommunications",
       "agency": "Unit 9",
       "productionCo": null
