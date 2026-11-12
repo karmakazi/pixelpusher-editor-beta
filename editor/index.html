@@ -7,6 +7,7 @@
   <title>Pixelpusher Editor</title>
   <link rel="stylesheet" href="/editor/editor.css">
   <script defer src="/editor/case-copy.js"></script>
+  <script defer src="/editor/portfolio.js"></script>
   <script defer src="/editor/editor.js"></script>
 </head>
 <body>
@@ -23,26 +24,66 @@
   <main id="workspace" hidden>
     <section class="controls" aria-labelledby="heading">
       <h1 id="heading">Edit a case study</h1>
-      <label for="project">Project</label>
-      <select id="project" disabled></select>
-      <p class="hint">Click text or an image in the preview to edit it.</p>
-      <h2 id="selection">Intro</h2>
-      <div id="copy-controls">
-        <p id="status" role="status"></p>
-        <div class="original"><h2>Published copy</h2><p id="original"></p></div>
-        <label for="draft">Draft copy <small id="count"></small></label>
-        <textarea id="draft" rows="4" disabled></textarea>
-        <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
+      <button type="button" class="secondary" id="open-portfolio" disabled>Manage case studies</button>
+      <div id="case-controls">
+        <label for="project">Project</label>
+        <select id="project" disabled></select>
+        <p class="hint">Click text or an image in the preview to edit it.</p>
+        <h2 id="selection">Intro</h2>
+        <div id="copy-controls">
+          <p id="status" role="status"></p>
+          <div class="original"><h2>Published copy</h2><p id="original"></p></div>
+          <label for="draft">Draft copy <small id="count"></small></label>
+          <textarea id="draft" rows="4" disabled></textarea>
+          <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
+        </div>
+        <p id="changes" role="status"></p>
+        <div class="actions">
+          <button id="publish" disabled>Publish to beta</button>
+          <button class="secondary" id="undo" disabled>Undo publish</button>
+          <button class="secondary" id="reset" disabled>Reset all edits</button>
+        </div>
+        <p id="release-status" role="status"></p>
+        <a id="commit" hidden target="_blank" rel="noopener">View GitHub commit ↗</a>
+        <a id="live" hidden target="_blank" rel="noopener">View live case study ↗</a>
       </div>
-      <p id="changes" role="status"></p>
-      <div class="actions">
-        <button id="publish" disabled>Publish to beta</button>
-        <button class="secondary" id="undo" disabled>Undo publish</button>
-        <button class="secondary" id="reset" disabled>Reset all edits</button>
-      </div>
-      <p id="release-status" role="status"></p>
-      <a id="commit" hidden target="_blank" rel="noopener">View GitHub commit ↗</a>
-      <a id="live" hidden target="_blank" rel="noopener">View live case study ↗</a>
+      <section id="portfolio-controls" hidden aria-label="Manage case studies">
+        <button type="button" class="secondary" id="back-to-editor">Back to editor</button>
+        <details id="new-case">
+          <summary>New case study</summary>
+          <form id="new-case-form">
+            <label for="new-client">Brand name</label>
+            <input id="new-client" name="client" maxlength="100" required>
+            <label for="new-title">Project title</label>
+            <input id="new-title" name="title" maxlength="160" required>
+            <label for="new-slug">Project URL slug</label>
+            <input id="new-slug" name="id" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="100" required>
+            <label for="new-intro">Intro</label>
+            <input id="new-intro" name="tagline" maxlength="600" required>
+            <label for="new-copy">Body copy</label>
+            <textarea id="new-copy" name="copy" rows="4" maxlength="12000" required></textarea>
+            <label for="new-image">Hero image from your device</label>
+            <input id="new-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
+            <label for="new-url">Or use an image URL</label>
+            <input id="new-url" name="image" maxlength="2048">
+            <label for="new-alt">Hero image alt text</label>
+            <input id="new-alt" name="alt" maxlength="300">
+            <button type="submit">Add to portfolio draft</button>
+          </form>
+        </details>
+        <label for="portfolio-list">Display order</label>
+        <select id="portfolio-list">
+          <option value="work">All Projects</option>
+          <option value="featured">Homepage Selected Work</option>
+        </select>
+        <ol id="portfolio-order"></ol>
+        <div class="actions">
+          <button type="button" id="publish-portfolio" disabled>Publish portfolio</button>
+          <button type="button" id="undo-portfolio" class="secondary" disabled>Undo portfolio publish</button>
+          <button type="button" id="reset-portfolio" class="secondary" disabled>Reset portfolio draft</button>
+        </div>
+        <p id="portfolio-status" role="status"></p>
+      </section>
     </section>
     <section class="preview" aria-label="Case study preview">
       <div class="preview-bar"><strong>Draft preview</strong><button class="secondary" id="mobile" aria-pressed="false">Mobile view</button></div>

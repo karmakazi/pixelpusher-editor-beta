@@ -1,5 +1,6 @@
 const { isSignedIn } = require('../lib/editor-session');
 const CaseCopy = require('../editor/case-copy');
+const Portfolio = require('../editor/portfolio');
 
 const repo = 'karmakazi/pixelpusher-editor-beta';
 const contentsUrl = `https://api.github.com/repos/${repo}/contents/projects.json`;
@@ -36,14 +37,14 @@ module.exports = async function publish(req, res) {
   if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
     return res.status(401).json({ error: 'Sign in to continue.' });
   }
-  const { projectId, previous, tagline, undo } = req.body || {};
+  const { projectId, previous, tagline, undo, portfolio } = req.body || {};
   const changes = req.body?.changes ?? { tagline };
   const baseline = typeof previous === 'string' ? { tagline: previous } : previous;
   const entries = changes && typeof changes === 'object' ? Object.entries(changes) : [];
-  if (typeof projectId !== 'string' || !baseline || !entries.length ||
+  if (!portfolio && (typeof projectId !== 'string' || !baseline || !entries.length ||
       !entries.every(([field, value]) => CaseCopy.valid(field, value) &&
         Object.hasOwn(baseline, field) && typeof baseline[field] === 'string' &&
-        baseline[field] !== value && CaseCopy.normalize(field, value) === value)) {
+        baseline[field] !== value && CaseCopy.normalize(field, value) === value))) {
     return res.status(400).json({ error: 'Choose a case study and check the edited fields.' });
   }
   const headers = {
@@ -61,12 +62,44 @@ module.exports = async function publish(req, res) {
     const file = await response.json();
     const source = Buffer.from(file.content, 'base64').toString('utf8');
     const projects = JSON.parse(source);
-    const index = projects.findIndex(item => item.id === projectId && !item.comingSoon);
-    if (index < 0 || entries.some(([field]) => !CaseCopy.hasField(projects[index], field) ||
-      CaseCopy.read(projects[index], field) !== baseline[field])) {
-      return res.status(409).json({ error: 'This case study changed in GitHub. Wait for the latest deployment and reload before editing it.' });
+    let updated;
+    let message;
+    if (portfolio) {
+      const { before, after, newProject, removeProject } = portfolio;
+      const current = Portfolio.order(projects);
+      if (JSON.stringify(current.work) !== JSON.stringify(before?.work) ||
+          JSON.stringify(current.featured) !== JSON.stringify(before?.featured)) {
+        return res.status(409).json({ error: 'The project order changed in GitHub. Reload after the latest deployment.' });
+      }
+      try {
+        let candidates = projects;
+        if (newProject) {
+          const created = Portfolio.create(newProject);
+          if (projects.some(project => project.id === created.id)) throw Error('That project URL already exists.');
+          candidates = [...projects, created];
+        }
+        if (removeProject) {
+          const existing = projects.find(project => project.id === removeProject.id);
+          if (!existing || JSON.stringify(existing) !== JSON.stringify(removeProject)) {
+            return res.status(409).json({ error: 'The new case study has since changed. It cannot be removed by this undo.' });
+          }
+          candidates = projects.filter(project => project !== existing);
+        }
+        updated = JSON.stringify(Portfolio.arrange(candidates, after), null, 2) + '\n';
+        message = newProject ? `Add case study: ${newProject.id}` :
+          removeProject ? `Undo new case study: ${removeProject.id}` : 'Update portfolio order';
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
+      }
+    } else {
+      const index = projects.findIndex(item => item.id === projectId && !item.comingSoon);
+      if (index < 0 || entries.some(([field]) => !CaseCopy.hasField(projects[index], field) ||
+        CaseCopy.read(projects[index], field) !== baseline[field])) {
+        return res.status(409).json({ error: 'This case study changed in GitHub. Wait for the latest deployment and reload before editing it.' });
+      }
+      updated = replaceCopy(source, projects, index, changes);
+      message = `${undo === true ? 'Restore' : 'Update'} case study content: ${projectId}`;
     }
-    const updated = replaceCopy(source, projects, index, changes);
     const saved = await fetch(contentsUrl, {
       method: 'PUT',
       headers,
@@ -75,7 +108,7 @@ module.exports = async function publish(req, res) {
         branch,
         sha: file.sha,
         content: Buffer.from(updated).toString('base64'),
-        message: `${undo === true ? 'Restore' : 'Update'} case study content: ${projectId}`,
+        message,
       }),
     });
     if (saved.status === 409) {
@@ -85,7 +118,7 @@ module.exports = async function publish(req, res) {
       return res.status(502).json({ error: 'GitHub rejected the change. Check the token’s Contents write access and the main branch rules.' });
     }
     const result = await saved.json();
-    return res.status(200).json({ commit: result.commit.sha });
+    return res.status(200).json({ commit: result.commit.sha, ...(portfolio ? { projects: JSON.parse(updated) } : {}) });
   } catch {
     return res.status(502).json({ error: 'Could not confirm the GitHub commit. Check the beta repo before retrying.' });
   }

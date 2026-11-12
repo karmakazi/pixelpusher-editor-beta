@@ -269,7 +269,7 @@ function selectProject() {
   imageSelection = null;
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
-  preview.src = `/?editor-preview=1#/work/${encodeURIComponent(selected.id)}`;
+  preview.src = `/?editor-preview=1&view=${revision}#/work/${encodeURIComponent(selected.id)}`;
   showField();
 }
 
@@ -639,7 +639,274 @@ fetch('/projects.json')
       projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
     if (!projectSelect.options.length) throw new Error('No case studies available.');
-    projectSelect.disabled = false;
+    projectSelect.disabled = openPortfolio.disabled = false;
     selectProject();
   })
   .catch(error => { status.textContent = error.message; });
+
+const portfolioControls = document.querySelector('#portfolio-controls');
+const caseControls = document.querySelector('#case-controls');
+const openPortfolio = document.querySelector('#open-portfolio');
+const backToEditor = document.querySelector('#back-to-editor');
+const portfolioList = document.querySelector('#portfolio-list');
+const portfolioOrder = document.querySelector('#portfolio-order');
+const portfolioStatus = document.querySelector('#portfolio-status');
+const publishPortfolio = document.querySelector('#publish-portfolio');
+const undoPortfolio = document.querySelector('#undo-portfolio');
+const resetPortfolio = document.querySelector('#reset-portfolio');
+const newCaseForm = document.querySelector('#new-case-form');
+const newImage = document.querySelector('#new-image');
+let lists;
+let newProject;
+let newFile;
+let uploadedHero;
+let portfolioUndo;
+let portfolioView;
+let portfolioCommit;
+let portfolioBase;
+
+function resetPortfolioDraft() {
+  newCaseForm.reset();
+  delete newCaseForm.elements.id.dataset.manual;
+  lists = Portfolio.order(projects);
+  newProject = null;
+  if (newFile) URL.revokeObjectURL(newFile.previewUrl);
+  newFile = uploadedHero = null;
+  portfolioView = portfolioList.value;
+}
+
+function previewPortfolio() {
+  if (portfolioControls.hidden) return;
+  preview.contentWindow?.postMessage({
+    type: 'pixelpusher-portfolio-preview', lists, newProject, view: portfolioView, base: portfolioBase,
+  }, location.origin);
+}
+
+function portfolioDirty() {
+  return Boolean(newProject) || JSON.stringify(lists) !== JSON.stringify(Portfolio.order(projects));
+}
+
+function renderPortfolio() {
+  const key = portfolioList.value;
+  const ids = lists[key];
+  const candidates = newProject ? [...projects, newProject] : projects;
+  portfolioOrder.replaceChildren();
+  for (const [index, id] of ids.entries()) {
+    const item = candidates.find(project => project.id === id);
+    const row = document.createElement('li');
+    const title = document.createElement('span');
+    title.textContent = item === newProject ? item.title : CaseCopy.read(item, 'title').replaceAll('\n', ' ');
+    row.append(title);
+    for (const [label, offset] of [['Move up', -1], ['Move down', 1]]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'secondary';
+      button.textContent = offset < 0 ? '↑' : '↓';
+      button.setAttribute('aria-label', `${label}: ${title.textContent}`);
+      button.disabled = releasing || !ids[index + offset];
+      button.onclick = () => {
+        [ids[index], ids[index + offset]] = [ids[index + offset], ids[index]];
+        portfolioView = key;
+        renderPortfolio();
+        const buttons = portfolioOrder.children[index + offset].querySelectorAll('button');
+        (buttons[offset < 0 ? 0 : 1].disabled ? buttons[offset < 0 ? 1 : 0] : buttons[offset < 0 ? 0 : 1]).focus();
+      };
+      row.append(button);
+    }
+    if (key === 'featured') {
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'secondary';
+      remove.textContent = 'Remove';
+      remove.disabled = releasing;
+      remove.onclick = () => {
+        ids.splice(index, 1);
+        portfolioView = key;
+        renderPortfolio();
+      };
+      row.append(remove);
+    }
+    portfolioOrder.append(row);
+  }
+  if (key === 'featured') {
+    const add = document.createElement('select');
+    add.setAttribute('aria-label', 'Feature a project');
+    add.add(new Option('Feature a project…', ''));
+    for (const item of candidates.filter(project => !ids.includes(project.id))) {
+      add.add(new Option(item === newProject ? item.title : CaseCopy.read(item, 'title').replaceAll('\n', ' '), item.id));
+    }
+    add.disabled = releasing || add.options.length === 1;
+    add.onchange = () => {
+      if (!add.value) return;
+      ids.push(add.value);
+      portfolioView = key;
+      renderPortfolio();
+    };
+    const row = document.createElement('li');
+    row.append(add);
+    portfolioOrder.append(row);
+  }
+  if (newProject) {
+    const row = document.createElement('li');
+    const view = document.createElement('button');
+    view.type = 'button';
+    view.className = 'secondary';
+    view.textContent = 'Preview new case study';
+    view.onclick = () => { portfolioView = 'new'; previewPortfolio(); };
+    row.append(view);
+    portfolioOrder.append(row);
+  }
+  publishPortfolio.disabled = releasing || !portfolioDirty();
+  undoPortfolio.disabled = releasing || portfolioDirty() || !portfolioUndo;
+  resetPortfolio.disabled = releasing || !portfolioDirty();
+  backToEditor.disabled = signOut.disabled = releasing;
+  newCaseForm.querySelector('button').disabled = releasing || Boolean(newProject);
+  previewPortfolio();
+}
+
+function loadProjectOptions(preferred) {
+  projectSelect.replaceChildren();
+  for (const project of projects.filter(item => !item.comingSoon)) {
+    projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
+  }
+  if (projects.some(project => project.id === preferred && !project.comingSoon)) projectSelect.value = preferred;
+}
+
+openPortfolio.onclick = () => {
+  if (releasing || pending || checkingImages || !selected) return;
+  if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+      !window.confirm('Discard unpublished edits to this case study?')) return;
+  selectProject();
+  caseControls.hidden = openPortfolio.hidden = true;
+  portfolioControls.hidden = false;
+  portfolioBase = projects;
+  resetPortfolioDraft();
+  renderPortfolio();
+};
+
+backToEditor.onclick = () => {
+  if (portfolioDirty() && !window.confirm('Discard unpublished changes to the portfolio?')) return;
+  resetPortfolioDraft();
+  portfolioControls.hidden = true;
+  caseControls.hidden = openPortfolio.hidden = false;
+  loadProjectOptions(selected?.id);
+  selectProject();
+};
+
+portfolioList.onchange = () => { portfolioView = portfolioList.value; renderPortfolio(); };
+resetPortfolio.onclick = () => { resetPortfolioDraft(); renderPortfolio(); };
+
+newCaseForm.elements.title.addEventListener('input', () => {
+  const slug = newCaseForm.elements.id;
+  if (!slug.dataset.manual) slug.value = newCaseForm.elements.title.value.toLowerCase()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100).replace(/-$/, '');
+});
+newCaseForm.elements.id.addEventListener('input', () => { newCaseForm.elements.id.dataset.manual = 'true'; });
+
+newCaseForm.onsubmit = async event => {
+  event.preventDefault();
+  if (newProject || releasing) return;
+  const input = Object.fromEntries(new FormData(newCaseForm));
+  if (projects.some(project => project.id === input.id)) {
+    portfolioStatus.textContent = 'That project URL is already in use.';
+    return;
+  }
+  const file = newImage.files[0];
+  let previewUrl;
+  try {
+    if (file) {
+      if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(file.type) || !file.size || file.size > 20 * 1024 * 1024) {
+        throw Error('Choose a JPEG, PNG, WebP, GIF, or AVIF image up to 20 MB.');
+      }
+      previewUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.src = previewUrl;
+      await image.decode();
+      if (portfolioControls.hidden || newProject || releasing) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+      input.image = previewUrl;
+    }
+    Portfolio.create(input, location.origin);
+    newProject = input;
+    newFile = file ? { file, previewUrl } : null;
+    lists.work.unshift(input.id);
+    portfolioView = 'new';
+    document.querySelector('#new-case').open = false;
+    portfolioStatus.textContent = 'Case study added to the draft. Publish when ready.';
+    renderPortfolio();
+  } catch (error) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    portfolioStatus.textContent = error.message;
+  }
+};
+
+async function releasePortfolio(undoing) {
+  if (releasing || (undoing ? !portfolioUndo || portfolioDirty() : !portfolioDirty())) return;
+  const before = Portfolio.order(projects);
+  const createdId = newProject?.id;
+  releasing = true;
+  renderPortfolio();
+  try {
+    const change = undoing ? { before, ...portfolioUndo } : { before, after: lists };
+    if (!undoing && newProject) {
+      if (newFile) {
+        portfolioStatus.textContent = 'Uploading hero image…';
+        const { uploadImage } = await import('/editor/image-upload.bundle.js');
+        uploadedHero ??= await uploadImage(newFile.file);
+      }
+      change.newProject = { ...newProject, image: uploadedHero ?? newProject.image };
+    }
+    portfolioStatus.textContent = 'Publishing to GitHub…';
+    const response = await fetch('/api/publish', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolio: change }),
+    });
+    if (response.status === 401) return sessionExpired();
+    const result = await response.json();
+    if (!response.ok) throw Error(result.error);
+    projects = result.projects;
+    portfolioCommit = result.commit;
+    portfolioUndo = undoing ? null : {
+      after: before,
+      ...(createdId ? { removeProject: projects.find(project => project.id === createdId) } : {}),
+    };
+    portfolioBase = projects;
+    resetPortfolioDraft();
+    loadProjectOptions(createdId ?? selected?.id);
+    portfolioStatus.replaceChildren('Saved to GitHub. Vercel is deploying. ');
+    const link = document.createElement('a');
+    link.href = `https://github.com/karmakazi/pixelpusher-editor-beta/commit/${portfolioCommit}`;
+    link.textContent = 'View commit';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    portfolioStatus.append(link);
+    const expected = JSON.stringify(Portfolio.order(projects));
+    for (let attempt = 0; attempt < 30; attempt++) {
+      try {
+        const deployed = await fetch(`/projects.json?portfolio=${Date.now()}`, { cache: 'no-store' });
+        if (deployed.ok && JSON.stringify(Portfolio.order(await deployed.json())) === expected) {
+          portfolioStatus.firstChild.textContent = undoing ? 'Previous portfolio restored. ' : 'Portfolio is live on the beta site. ';
+          break;
+        }
+      } catch {
+        // The next check can recover from a temporary network error.
+      }
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    if (portfolioStatus.firstChild.textContent.startsWith('Saved')) {
+      portfolioStatus.firstChild.textContent = 'Saved to GitHub. Check Vercel for deployment status. ';
+    }
+  } catch (error) {
+    if (error.status === 401) return sessionExpired();
+    portfolioStatus.textContent = error.message;
+  } finally {
+    releasing = false;
+    renderPortfolio();
+  }
+}
+
+publishPortfolio.onclick = () => releasePortfolio(false);
+undoPortfolio.onclick = () => releasePortfolio(true);
+preview.addEventListener('load', previewPortfolio);

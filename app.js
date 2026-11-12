@@ -5,6 +5,7 @@ let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
 let casePreview = null;
+let portfolioPreview = null;
 let refreshCopyAI;
 const editorPreview = window.parent !== window && new URLSearchParams(location.search).has('editor-preview');
 
@@ -13,6 +14,21 @@ if (editorPreview) {
   refreshCopyAI = setupCopyAI();
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
+    if (event.data?.type === 'pixelpusher-portfolio-preview') {
+      const { lists, newProject, view, base } = event.data;
+      if (!['work', 'featured', 'new'].includes(view)) return;
+      try {
+        const created = newProject ? Portfolio.create(newProject, location.origin) : null;
+        const projects = Array.isArray(base) ? base : PROJECTS;
+        portfolioPreview = Portfolio.arrange(created ? [...projects, created] : projects, lists);
+        if (view === 'work') renderWork();
+        else if (view === 'featured') renderHome();
+        else if (created) renderCase(created.id);
+      } catch {
+        // The editor and preview can briefly have different deployed revisions.
+      }
+      return;
+    }
     const { type, projectId, values, selection, locked, inline, ai, image } = event.data || {};
     if (type !== 'pixelpusher-copy-preview' || typeof projectId !== 'string' ||
         !values || typeof values !== 'object' ||
@@ -66,7 +82,7 @@ function selectPreviewImage(image) {
 }
 
 function updatePreviewAlt(projectId, values, changed) {
-  const stored = PROJECTS.find(project => project.id === projectId);
+  const stored = (portfolioPreview || PROJECTS).find(project => project.id === projectId);
   if (!stored) return;
   const project = CaseCopy.apply(stored, values);
   for (const field of changed) {
@@ -81,7 +97,7 @@ function updatePreviewAlt(projectId, values, changed) {
 }
 
 function editableImage(key, label) {
-  return editorPreview ? ` data-edit-image="${key}" role="button" tabindex="0" aria-label="${label}"` : '';
+  return editorPreview && !portfolioPreview ? ` data-edit-image="${key}" role="button" tabindex="0" aria-label="${label}"` : '';
 }
 
 function galleryImage(asset, index) {
@@ -90,7 +106,7 @@ function galleryImage(asset, index) {
 }
 
 function editableCopy(field, paragraph) {
-  if (!editorPreview) return '';
+  if (!editorPreview || portfolioPreview) return '';
   const label = paragraph === undefined ? CaseCopy.fields[field].label : `Body paragraph ${paragraph + 1}`;
   const index = paragraph === undefined ? '' : ` data-copy-paragraph="${paragraph}"`;
   return ` data-copy-field="${field}"${index} data-placeholder="${label}" role="textbox" aria-label="${label}"`;
@@ -431,7 +447,7 @@ function renderHome() {
   setMeta('Pixelpusher is a Toronto-based creative studio building campaigns, digital experiences, and brand moments for the world\u2019s most ambitious brands.');
   window.scrollTo(0, 0);
 
-  const featured = PROJECTS
+  const featured = (portfolioPreview || PROJECTS)
     .filter(p => p.featured)
     .sort((a, b) => (a.featuredOrder || 99) - (b.featuredOrder || 99));
 
@@ -659,7 +675,7 @@ function renderWork() {
     </section>
 
     <div class="work-grid">
-      ${buildGrid(PROJECTS, false)}
+      ${buildGrid(portfolioPreview || PROJECTS, false)}
     </div>
 
   `;
@@ -669,7 +685,7 @@ function renderWork() {
 
 // ── RENDER: CASE STUDY ────────────────────────────────────
 function renderCase(id, preserveScroll = false) {
-  const stored = PROJECTS.find(x => x.id === id);
+  const stored = (portfolioPreview || PROJECTS).find(x => x.id === id);
   const p = stored && casePreview?.projectId === id ? CaseCopy.apply(stored, casePreview.values) : stored;
 
   if (!p || p.comingSoon) {
@@ -766,9 +782,9 @@ function renderCase(id, preserveScroll = false) {
 
     <section class="case-hero">
       <div class="case-hero-img">
-        <img src="${CaseCopy.escape(p.heroImg || heroUrl(p.heroSeed))}" alt="${p.heroAlt ? CaseCopy.escape(p.heroAlt) : `${p.client} \u2014 ${p.title}`}"${editorPreview ? ' data-edit-image="hero"' : ''} />
+        <img src="${CaseCopy.escape(p.heroImg || heroUrl(p.heroSeed))}" alt="${p.heroAlt ? CaseCopy.escape(p.heroAlt) : `${p.client} \u2014 ${p.title}`}"${editorPreview && !portfolioPreview ? ' data-edit-image="hero"' : ''} />
       </div>
-      ${editorPreview ? '<button class="edit-hero-image" type="button" data-edit-image="hero">Edit hero image</button>' : ''}
+      ${editorPreview && !portfolioPreview ? '<button class="edit-hero-image" type="button" data-edit-image="hero">Edit hero image</button>' : ''}
       <p class="case-eyebrow"${editableCopy('client')}>${p.client}</p>
       <h1 class="case-h1"${editableCopy('title')}>${h1Html}</h1>
       <p class="case-tagline"${editableCopy('tagline')}></p>

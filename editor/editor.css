@@ -40,3 +40,12 @@ iframe.mobile { width: min(100%, 390px); }
 #commit, #live { color: #d9f36c; font-size: .82rem; margin-right: .8rem; }
 #original { white-space: pre-wrap; max-height: 12rem; overflow: auto; }
 #changes { color: #c7c7bf; font-size: .82rem; line-height: 1.5; }
+#open-portfolio, #back-to-editor { margin-bottom: .65rem; }
+#new-case summary { cursor: pointer; padding: .55rem 0; }
+#new-case-form button { margin-top: .8rem; }
+#portfolio-order { padding-left: 1.4rem; }
+#portfolio-order li { padding: .3rem 0; }
+#portfolio-order span { display: block; font-size: .9rem; margin-bottom: .25rem; }
+#portfolio-order button { margin-right: .3rem; }
+#portfolio-status { font-size: .85rem; line-height: 1.5; }
+#portfolio-status a { color: #d9f36c; }
