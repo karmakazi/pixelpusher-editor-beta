@@ -1,68 +1,5 @@
 [
   {
-    "id": "colgate-totally-honest",
-    "client": "Colgate",
-    "title": "Totally Honest",
-    "titleLines": [
-      "Totally",
-      "Honest"
-    ],
-    "category": "Brand &amp; Campaign",
-    "featured": true,
-    "featuredOrder": 1,
-    "featuredWide": true,
-    "wide": true,
-    "vimeoId": "925868287",
-    "thumbSeed": "colgate-pp",
-    "heroSeed": "colgate-hero",
-    "heroImg": "img/colgate-hero.png",
-    "tagline": "We built a confession booth that made a century-old brand feel radically honest.",
-    "pullQuote": "Everyone has a dental secret. We just gave them a place to confess it — live, on camera, in the Flatiron District.",
-    "copy": [
-      "BCW challenged us to make Colgate’s ‘Totally Honest’ campaign tangible. The insight was simple and uncomfortable: everyone lies to their dentist. Our answer was a custom video booth installed in New York’s Flatiron District, where passersby could step inside and anonymously confess their worst dental habits — on camera. AI face tracking replaced participants’ faces with the iconic Colgate dot while an animated smile mirrored their mouth movements in real time.",
-      "The result was something between a confessional and a comedy set — authentic, disarming, and completely on-brand. Content from the activation seeded across digital and social, turning New York’s honesty into Colgate’s most shareable campaign in years."
-    ],
-    "gallery": [
-      {
-        "wide": true,
-        "seed": "colgate-wide1",
-        "alt": "Totally Honest booth installation"
-      },
-      {
-        "wide": false,
-        "seed": "colgate-a",
-        "alt": "AI face tracking detail",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/bc3ec61c-2140-499a-9c41-3ccf0842a177-O4wBK3Ox5CrV9uy7l3KVeCNA1I7ABg.png"
-      },
-      {
-        "wide": false,
-        "seed": "colgate-b",
-        "alt": "Participant moment",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/53551ec6-6ed4-4225-87d1-eec7bae03b97-NdIDLe4HiYddBreZMlwUhrWT6yg66p.png"
-      },
-      {
-        "wide": true,
-        "seed": "colgate-wide2",
-        "alt": "Flatiron District activation",
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/c5a538ff-4342-46d3-8f14-b76d37240179-YTW0LfkwlvMkUdDuFbeUsx3X1hRM2V.jpg"
-      }
-    ],
-    "meta": {
-      "year": "2024",
-      "client": "Colgate-Palmolive",
-      "services": [
-        "Experiential Design",
-        "Interactive Technology",
-        "Content Production"
-      ],
-      "industry": "Consumer Goods",
-      "agency": "BCW",
-      "productionCo": "The Deli"
-    },
-    "nextProject": "cadillac-be-iconic",
-    "comingSoon": false
-  },
-  {
     "id": "cadillac-be-iconic",
     "client": "Cadillac",
     "title": "Be Iconic",
@@ -123,6 +60,69 @@
       "productionCo": "Makers"
     },
     "nextProject": "gatorade-sweat-machine",
+    "comingSoon": false
+  },
+  {
+    "id": "colgate-totally-honest",
+    "client": "Colgate",
+    "title": "Totally Honest",
+    "titleLines": [
+      "Totally",
+      "Honest"
+    ],
+    "category": "Brand &amp; Campaign",
+    "featured": true,
+    "featuredOrder": 1,
+    "featuredWide": true,
+    "wide": true,
+    "vimeoId": "925868287",
+    "thumbSeed": "colgate-pp",
+    "heroSeed": "colgate-hero",
+    "heroImg": "img/colgate-hero.png",
+    "tagline": "We built a confession booth that made a century-old brand feel radically honest.",
+    "pullQuote": "Everyone has a dental secret. We just gave them a place to confess it — live, on camera, in the Flatiron District.",
+    "copy": [
+      "BCW challenged us to make Colgate’s ‘Totally Honest’ campaign tangible. The insight was simple and uncomfortable: everyone lies to their dentist. Our answer was a custom video booth installed in New York’s Flatiron District, where passersby could step inside and anonymously confess their worst dental habits — on camera. AI face tracking replaced participants’ faces with the iconic Colgate dot while an animated smile mirrored their mouth movements in real time.",
+      "The result was something between a confessional and a comedy set — authentic, disarming, and completely on-brand. Content from the activation seeded across digital and social, turning New York’s honesty into Colgate’s most shareable campaign in years."
+    ],
+    "gallery": [
+      {
+        "wide": true,
+        "seed": "colgate-wide1",
+        "alt": "Totally Honest booth installation"
+      },
+      {
+        "wide": false,
+        "seed": "colgate-a",
+        "alt": "AI face tracking detail",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/bc3ec61c-2140-499a-9c41-3ccf0842a177-O4wBK3Ox5CrV9uy7l3KVeCNA1I7ABg.png"
+      },
+      {
+        "wide": false,
+        "seed": "colgate-b",
+        "alt": "Participant moment",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/53551ec6-6ed4-4225-87d1-eec7bae03b97-NdIDLe4HiYddBreZMlwUhrWT6yg66p.png"
+      },
+      {
+        "wide": true,
+        "seed": "colgate-wide2",
+        "alt": "Flatiron District activation",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/c5a538ff-4342-46d3-8f14-b76d37240179-YTW0LfkwlvMkUdDuFbeUsx3X1hRM2V.jpg"
+      }
+    ],
+    "meta": {
+      "year": "2024",
+      "client": "Colgate-Palmolive",
+      "services": [
+        "Experiential Design",
+        "Interactive Technology",
+        "Content Production"
+      ],
+      "industry": "Consumer Goods",
+      "agency": "BCW",
+      "productionCo": "The Deli"
+    },
+    "nextProject": "cadillac-be-iconic",
     "comingSoon": false
   },
   {
@@ -377,7 +377,10 @@
     "id": "gatorade-sweat-machine",
     "client": "Gatorade",
     "title": "Sweat Machine",
-    "titleLines": ["Sweat", "Machine"],
+    "titleLines": [
+      "Sweat",
+      "Machine"
+    ],
     "category": "Digital Experience",
     "featured": true,
     "featuredOrder": 3,
@@ -388,21 +391,41 @@
     "heroSeed": "gatorade-hero",
     "heroImg": "img/gatorade-hero.png",
     "tagline": "Free Gatorade. But you have to earn it.",
-    "pullQuote": "The machine knows if you\u2019ve worked for it. Your heart rate doesn\u2019t lie.",
+    "pullQuote": "The machine knows if you’ve worked for it. Your heart rate doesn’t lie.",
     "copy": [
-      "TBWA Toronto came to us with the best kind of brief: make people prove they deserve a free Gatorade. We built a custom vending machine equipped with a pulse sensor that measured the user\u2019s heart rate on contact. Heart rate over 120 BPM \u2014 clear evidence of real effort \u2014 and the machine dispensed a free bottle. Anything less, nothing.",
-      "The Sweat Machine turned a product sample into a challenge, and people rose to it. Crowds gathered. People did jumping jacks, sprinted in place, and egged each other on. The video spread fast \u2014 because it was exactly what the brand stands for, made physical and immediate."
+      "TBWA Toronto came to us with the best kind of brief: make people prove they deserve a free Gatorade. We built a custom vending machine equipped with a pulse sensor that measured the user’s heart rate on contact. Heart rate over 120 BPM — clear evidence of real effort — and the machine dispensed a free bottle. Anything less, nothing.",
+      "The Sweat Machine turned a product sample into a challenge, and people rose to it. Crowds gathered. People did jumping jacks, sprinted in place, and egged each other on. The video spread fast — because it was exactly what the brand stands for, made physical and immediate."
     ],
     "gallery": [
-      { "wide": true,  "seed": "gatorade-wide1", "alt": "Sweat Machine vending machine" },
-      { "wide": false, "seed": "gatorade-a",     "alt": "Pulse sensor detail" },
-      { "wide": false, "seed": "gatorade-b",     "alt": "Crowd reaction" },
-      { "wide": true,  "seed": "gatorade-wide2", "alt": "Activation in action" }
+      {
+        "wide": true,
+        "seed": "gatorade-wide1",
+        "alt": "Sweat Machine vending machine"
+      },
+      {
+        "wide": false,
+        "seed": "gatorade-a",
+        "alt": "Pulse sensor detail"
+      },
+      {
+        "wide": false,
+        "seed": "gatorade-b",
+        "alt": "Crowd reaction"
+      },
+      {
+        "wide": true,
+        "seed": "gatorade-wide2",
+        "alt": "Activation in action"
+      }
     ],
     "meta": {
       "year": "2016",
       "client": "Gatorade Canada",
-      "services": ["Experiential Design", "Custom Electronics", "Interactive Installation"],
+      "services": [
+        "Experiential Design",
+        "Custom Electronics",
+        "Interactive Installation"
+      ],
       "industry": "Sports &amp; Nutrition",
       "agency": "TBWA Toronto",
       "productionCo": null
@@ -414,7 +437,10 @@
     "id": "adidas-complexcon",
     "client": "Adidas",
     "title": "ComplexCon",
-    "titleLines": ["Complex", "Con"],
+    "titleLines": [
+      "Complex",
+      "Con"
+    ],
     "category": "Experiential",
     "featured": true,
     "featuredOrder": 4,
@@ -425,21 +451,41 @@
     "heroSeed": "adidas-hero",
     "heroImg": "img/adidas-hero.png",
     "tagline": "We levelled the playing field at the most chaotic sneaker drop on the planet.",
-    "pullQuote": "At ComplexCon, resellers always won. We built a system that made sure they couldn\u2019t.",
+    "pullQuote": "At ComplexCon, resellers always won. We built a system that made sure they couldn’t.",
     "copy": [
-      "Jam3 brought us into one of the most technically complex activations we\u2019d ever built. At ComplexCon, limited sneaker drops are chaos \u2014 large-scale resellers scoop product the moment it hits, leaving real collectors empty-handed. Adidas wanted to fix that. We built onto the Complex app, integrating AR, Bluetooth beacons, and a network of internet-connected lockers to create a drop system where every attendee had an equal shot.",
-      "Our contribution was the backend engine: a CMS that let Adidas admins schedule and manage drops in real time \u2014 controlling locations, inventory, shoe types, and pricing \u2014 while processing payments and remotely unlocking the right lockers for the right buyers at the right moment. The system ran without a hitch across a packed convention floor. The project was covered by Engadget and won a Cannes Digital Craft Bronze Lion and two One Show Bronze Pencils."
+      "Jam3 brought us into one of the most technically complex activations we’d ever built. At ComplexCon, limited sneaker drops are chaos — large-scale resellers scoop product the moment it hits, leaving real collectors empty-handed. Adidas wanted to fix that. We built onto the Complex app, integrating AR, Bluetooth beacons, and a network of internet-connected lockers to create a drop system where every attendee had an equal shot.",
+      "Our contribution was the backend engine: a CMS that let Adidas admins schedule and manage drops in real time — controlling locations, inventory, shoe types, and pricing — while processing payments and remotely unlocking the right lockers for the right buyers at the right moment. The system ran without a hitch across a packed convention floor. The project was covered by Engadget and won a Cannes Digital Craft Bronze Lion and two One Show Bronze Pencils."
     ],
     "gallery": [
-      { "wide": true,  "seed": "adidas-wide1", "alt": "ComplexCon locker system" },
-      { "wide": false, "seed": "adidas-a",     "alt": "AR drop experience" },
-      { "wide": false, "seed": "adidas-b",     "alt": "Locker unlock moment" },
-      { "wide": true,  "seed": "adidas-wide2", "alt": "Convention floor activation" }
+      {
+        "wide": true,
+        "seed": "adidas-wide1",
+        "alt": "ComplexCon locker system"
+      },
+      {
+        "wide": false,
+        "seed": "adidas-a",
+        "alt": "AR drop experience"
+      },
+      {
+        "wide": false,
+        "seed": "adidas-b",
+        "alt": "Locker unlock moment"
+      },
+      {
+        "wide": true,
+        "seed": "adidas-wide2",
+        "alt": "Convention floor activation"
+      }
     ],
     "meta": {
       "year": "2018",
       "client": "Adidas",
-      "services": ["App Development", "CMS &amp; Backend", "Experiential Technology"],
+      "services": [
+        "App Development",
+        "CMS &amp; Backend",
+        "Experiential Technology"
+      ],
       "industry": "Sportswear",
       "agency": "Jam3",
       "productionCo": null
@@ -451,7 +497,10 @@
     "id": "cadillac-xt4",
     "client": "Cadillac",
     "title": "Cadillac XT4",
-    "titleLines": ["Cadillac", "XT4"],
+    "titleLines": [
+      "Cadillac",
+      "XT4"
+    ],
     "category": "Brand &amp; Campaign",
     "featured": false,
     "featuredWide": false,
@@ -463,19 +512,39 @@
     "tagline": "We turned the car into the controller.",
     "pullQuote": "Touch the door. Touch the hood. The car knows.",
     "copy": [
-      "Isobar and Cadillac wanted to launch the XT4 \u2014 a new, fun crossover aimed at a younger buyer \u2014 with something that matched the car\u2019s energy. We built an immersive showcase using a wraparound LED screen that filled the viewer\u2019s entire field of vision. Then we turned the car itself into an input device. Using Touch Designer, Microsoft Kinect, and Leap Motion, we mapped touch points across the XT4\u2019s exterior.",
-      "Touching the car in key areas \u2014 the door, the roof, the hood \u2014 triggered real-time interactive animations across the surrounding screens, capturing the excitement and freedom the XT4 was designed to embody. The effect was immediate: the car felt alive before anyone had driven it."
+      "Isobar and Cadillac wanted to launch the XT4 — a new, fun crossover aimed at a younger buyer — with something that matched the car’s energy. We built an immersive showcase using a wraparound LED screen that filled the viewer’s entire field of vision. Then we turned the car itself into an input device. Using Touch Designer, Microsoft Kinect, and Leap Motion, we mapped touch points across the XT4’s exterior.",
+      "Touching the car in key areas — the door, the roof, the hood — triggered real-time interactive animations across the surrounding screens, capturing the excitement and freedom the XT4 was designed to embody. The effect was immediate: the car felt alive before anyone had driven it."
     ],
     "gallery": [
-      { "wide": true,  "seed": "xt4-wide1", "alt": "Cadillac XT4 interactive showcase" },
-      { "wide": false, "seed": "xt4-a",     "alt": "Touch sensor detail" },
-      { "wide": false, "seed": "xt4-b",     "alt": "LED wraparound screen" },
-      { "wide": true,  "seed": "xt4-wide2", "alt": "Interactive animation output" }
+      {
+        "wide": true,
+        "seed": "xt4-wide1",
+        "alt": "Cadillac XT4 interactive showcase"
+      },
+      {
+        "wide": false,
+        "seed": "xt4-a",
+        "alt": "Touch sensor detail"
+      },
+      {
+        "wide": false,
+        "seed": "xt4-b",
+        "alt": "LED wraparound screen"
+      },
+      {
+        "wide": true,
+        "seed": "xt4-wide2",
+        "alt": "Interactive animation output"
+      }
     ],
     "meta": {
       "year": "2018",
       "client": "Cadillac",
-      "services": ["Interactive Installation", "Sensor Technology", "Real-Time Graphics"],
+      "services": [
+        "Interactive Installation",
+        "Sensor Technology",
+        "Real-Time Graphics"
+      ],
       "industry": "Automotive",
       "agency": "Isobar",
       "productionCo": null
@@ -487,7 +556,10 @@
     "id": "shiseido-nuit-blanche",
     "client": "Shiseido",
     "title": "Nuit Blanche",
-    "titleLines": ["Nuit", "Blanche"],
+    "titleLines": [
+      "Nuit",
+      "Blanche"
+    ],
     "category": "Experiential",
     "featured": true,
     "featuredOrder": 6,
@@ -500,19 +572,39 @@
     "tagline": "Two and a half weeks to build one of the most ambitious installations of the year.",
     "pullQuote": "In beauty, the face is the canvas. We built the studio around it.",
     "copy": [
-      "Isobar came to us with a project that was equal parts thrilling and terrifying: build a fully immersive, tech-driven installation for Shiseido on the trading floor of the Design Exchange \u2014 for Nuit Blanche \u2014 in two and a half weeks. Using projection mapping, face tracking, gesture control, and real-time video effects, we created an experience where visitors could interact with Shiseido\u2019s four key product technologies: Dew, Gel, Powder, and Ink.",
-      "A Kinect and Leap Motion sensor array let visitors gesture through the space to control two types of projected video and ambient audio simultaneously \u2014 their face becoming the canvas, the technology an extension of their creativity. The installation ran for one night and repositioned Shiseido Ginza as a brand that doesn\u2019t just make beauty products. It makes art."
+      "Isobar came to us with a project that was equal parts thrilling and terrifying: build a fully immersive, tech-driven installation for Shiseido on the trading floor of the Design Exchange — for Nuit Blanche — in two and a half weeks. Using projection mapping, face tracking, gesture control, and real-time video effects, we created an experience where visitors could interact with Shiseido’s four key product technologies: Dew, Gel, Powder, and Ink.",
+      "A Kinect and Leap Motion sensor array let visitors gesture through the space to control two types of projected video and ambient audio simultaneously — their face becoming the canvas, the technology an extension of their creativity. The installation ran for one night and repositioned Shiseido Ginza as a brand that doesn’t just make beauty products. It makes art."
     ],
     "gallery": [
-      { "wide": true,  "seed": "shiseido-wide1", "alt": "Nuit Blanche projection installation" },
-      { "wide": false, "seed": "shiseido-a",     "alt": "Gesture control detail" },
-      { "wide": false, "seed": "shiseido-b",     "alt": "Face tracking projection" },
-      { "wide": true,  "seed": "shiseido-wide2", "alt": "Design Exchange trading floor" }
+      {
+        "wide": true,
+        "seed": "shiseido-wide1",
+        "alt": "Nuit Blanche projection installation"
+      },
+      {
+        "wide": false,
+        "seed": "shiseido-a",
+        "alt": "Gesture control detail"
+      },
+      {
+        "wide": false,
+        "seed": "shiseido-b",
+        "alt": "Face tracking projection"
+      },
+      {
+        "wide": true,
+        "seed": "shiseido-wide2",
+        "alt": "Design Exchange trading floor"
+      }
     ],
     "meta": {
       "year": "2018",
       "client": "Shiseido",
-      "services": ["Projection Mapping", "Gesture Control", "Interactive Installation"],
+      "services": [
+        "Projection Mapping",
+        "Gesture Control",
+        "Interactive Installation"
+      ],
       "industry": "Beauty",
       "agency": "Isobar",
       "productionCo": null
@@ -522,9 +614,12 @@
   },
   {
     "id": "ditaliano-tenor-takeover",
-    "client": "D\u2019Italiano",
+    "client": "D’Italiano",
     "title": "Tenor Takeover",
-    "titleLines": ["Tenor", "Takeover"],
+    "titleLines": [
+      "Tenor",
+      "Takeover"
+    ],
     "category": "Social &amp; Content",
     "featured": false,
     "featuredWide": false,
@@ -536,19 +631,39 @@
     "tagline": "We put live opera singers in a YouTube masthead and let the internet write the lyrics.",
     "pullQuote": "The internet submitted bread-related tweets. Professional tenors sang every single one.",
     "copy": [
-      "Union Creative had an idea that was either brilliant or insane: take over YouTube\u2019s masthead for a day with a live stream of professional opera tenors singing tweets submitted by viewers \u2014 in real time, bread-related content only. The technical challenge was significant: simultaneously stream live performers, display incoming tweets, and broadcast everything through a YouTube masthead that had never been used this way before.",
-      "The real complexity was invisible to viewers. Every tweet needed legal consent before it could appear \u2014 without breaking the flow of the experience. We built a seamless consent and submission interface that kept users inside the moment, and a moderation dashboard that let producers queue tweets for the tenors on the fly. The event ran for one day and won Gold at the Media Innovation Awards and recognition at the Atomic Awards."
+      "Union Creative had an idea that was either brilliant or insane: take over YouTube’s masthead for a day with a live stream of professional opera tenors singing tweets submitted by viewers — in real time, bread-related content only. The technical challenge was significant: simultaneously stream live performers, display incoming tweets, and broadcast everything through a YouTube masthead that had never been used this way before.",
+      "The real complexity was invisible to viewers. Every tweet needed legal consent before it could appear — without breaking the flow of the experience. We built a seamless consent and submission interface that kept users inside the moment, and a moderation dashboard that let producers queue tweets for the tenors on the fly. The event ran for one day and won Gold at the Media Innovation Awards and recognition at the Atomic Awards."
     ],
     "gallery": [
-      { "wide": true,  "seed": "ditaliano-wide1", "alt": "YouTube masthead takeover" },
-      { "wide": false, "seed": "ditaliano-a",     "alt": "Live tenor performance" },
-      { "wide": false, "seed": "ditaliano-b",     "alt": "Tweet submission interface" },
-      { "wide": true,  "seed": "ditaliano-wide2", "alt": "Moderation dashboard" }
+      {
+        "wide": true,
+        "seed": "ditaliano-wide1",
+        "alt": "YouTube masthead takeover"
+      },
+      {
+        "wide": false,
+        "seed": "ditaliano-a",
+        "alt": "Live tenor performance"
+      },
+      {
+        "wide": false,
+        "seed": "ditaliano-b",
+        "alt": "Tweet submission interface"
+      },
+      {
+        "wide": true,
+        "seed": "ditaliano-wide2",
+        "alt": "Moderation dashboard"
+      }
     ],
     "meta": {
       "year": "2017",
-      "client": "D\u2019Italiano / Weston Foods",
-      "services": ["Live Streaming", "Interactive Platform", "Moderation Technology"],
+      "client": "D’Italiano / Weston Foods",
+      "services": [
+        "Live Streaming",
+        "Interactive Platform",
+        "Moderation Technology"
+      ],
       "industry": "Food &amp; Beverage",
       "agency": "Union Creative",
       "productionCo": null
@@ -560,7 +675,10 @@
     "id": "sport-chek-chase-the-gear",
     "client": "Sport Chek",
     "title": "Chase The Gear",
-    "titleLines": ["Chase", "The Gear"],
+    "titleLines": [
+      "Chase",
+      "The Gear"
+    ],
     "category": "Digital Experience",
     "featured": false,
     "featuredWide": false,
@@ -572,19 +690,39 @@
     "tagline": "We turned a Facebook Live stream into a real-life video game with hundreds of players.",
     "pullQuote": "What started as a social media experiment became a footrace through High Park.",
     "copy": [
-      "TBWA had a genuinely unhinged idea for Sport Chek: take a real Olympic hopeful, send them running through High Park, stream it live on Facebook, and challenge viewers to physically show up and catch them to win prizes. We equipped the runners with custom video streaming apps and built proprietary software to push their live feeds directly to Facebook \u2014 clean, reliable, and real-time across multiple simultaneous streams.",
-      "Nobody predicted how many people would actually show up. Hundreds of participants turned what was meant to be a social experiment into a genuine, chaotic, city-wide event \u2014 with runners dodging crowds, fans sprinting through the park, and thousands more watching it unfold on Facebook Live. It won a Clio Bronze and became a case study in how to make a brand genuinely participatory."
+      "TBWA had a genuinely unhinged idea for Sport Chek: take a real Olympic hopeful, send them running through High Park, stream it live on Facebook, and challenge viewers to physically show up and catch them to win prizes. We equipped the runners with custom video streaming apps and built proprietary software to push their live feeds directly to Facebook — clean, reliable, and real-time across multiple simultaneous streams.",
+      "Nobody predicted how many people would actually show up. Hundreds of participants turned what was meant to be a social experiment into a genuine, chaotic, city-wide event — with runners dodging crowds, fans sprinting through the park, and thousands more watching it unfold on Facebook Live. It won a Clio Bronze and became a case study in how to make a brand genuinely participatory."
     ],
     "gallery": [
-      { "wide": true,  "seed": "sportchek-wide1", "alt": "Chase The Gear High Park event" },
-      { "wide": false, "seed": "sportchek-a",     "alt": "Facebook Live stream" },
-      { "wide": false, "seed": "sportchek-b",     "alt": "Runners and crowd" },
-      { "wide": true,  "seed": "sportchek-wide2", "alt": "Streaming infrastructure" }
+      {
+        "wide": true,
+        "seed": "sportchek-wide1",
+        "alt": "Chase The Gear High Park event"
+      },
+      {
+        "wide": false,
+        "seed": "sportchek-a",
+        "alt": "Facebook Live stream"
+      },
+      {
+        "wide": false,
+        "seed": "sportchek-b",
+        "alt": "Runners and crowd"
+      },
+      {
+        "wide": true,
+        "seed": "sportchek-wide2",
+        "alt": "Streaming infrastructure"
+      }
     ],
     "meta": {
       "year": "2016",
       "client": "Sport Chek",
-      "services": ["Live Streaming", "Experiential", "Social Campaign"],
+      "services": [
+        "Live Streaming",
+        "Experiential",
+        "Social Campaign"
+      ],
       "industry": "Retail",
       "agency": "TBWA",
       "productionCo": null
@@ -596,7 +734,10 @@
     "id": "ford-go-further",
     "client": "Ford",
     "title": "Go Further",
-    "titleLines": ["Go", "Further"],
+    "titleLines": [
+      "Go",
+      "Further"
+    ],
     "category": "Brand &amp; Campaign",
     "featured": true,
     "featuredOrder": 5,
@@ -606,22 +747,42 @@
     "thumbSeed": "ford-pp",
     "heroSeed": "ford-hero",
     "heroImg": "img/go-further-hero.png",
-    "tagline": "We turned Ford trucks into playable video games \u2014 and kept them running for two full seasons.",
+    "tagline": "We turned Ford trucks into playable video games — and kept them running for two full seasons.",
     "pullQuote": "The steering wheel is real. The windshield is the screen. The Leafs fans loved it.",
     "copy": [
-      "Bond Brand Loyalty asked us a question nobody had ever asked before: can you turn a car into a video game? Not a driving simulator \u2014 an actual, fully playable game, controlled by the vehicle itself, projected onto the windshield. We said yes. Using a modified steering wheel and accelerometer as input devices, we built a custom Unity game that lived entirely inside the Ford truck, with the windscreen as the display.",
-      "The activation ran at Scotiabank Arena for every Toronto Leafs and Raptors home game across two full seasons \u2014 a testament to how well it worked. Thousands of fans played it. Nobody had seen anything like it. Bond and Ford kept it going because the lines never stopped."
+      "Bond Brand Loyalty asked us a question nobody had ever asked before: can you turn a car into a video game? Not a driving simulator — an actual, fully playable game, controlled by the vehicle itself, projected onto the windshield. We said yes. Using a modified steering wheel and accelerometer as input devices, we built a custom Unity game that lived entirely inside the Ford truck, with the windscreen as the display.",
+      "The activation ran at Scotiabank Arena for every Toronto Leafs and Raptors home game across two full seasons — a testament to how well it worked. Thousands of fans played it. Nobody had seen anything like it. Bond and Ford kept it going because the lines never stopped."
     ],
     "gallery": [
-      { "wide": true,  "seed": "ford-wide1", "alt": "Ford Go Further game activation" },
-      { "wide": false, "seed": "ford-a",     "alt": "Windshield game display" },
-      { "wide": false, "seed": "ford-b",     "alt": "Steering wheel controller" },
-      { "wide": true,  "seed": "ford-wide2", "alt": "Scotiabank Arena installation" }
+      {
+        "wide": true,
+        "seed": "ford-wide1",
+        "alt": "Ford Go Further game activation"
+      },
+      {
+        "wide": false,
+        "seed": "ford-a",
+        "alt": "Windshield game display"
+      },
+      {
+        "wide": false,
+        "seed": "ford-b",
+        "alt": "Steering wheel controller"
+      },
+      {
+        "wide": true,
+        "seed": "ford-wide2",
+        "alt": "Scotiabank Arena installation"
+      }
     ],
     "meta": {
       "year": "2018",
       "client": "Ford",
-      "services": ["Game Development", "Interactive Installation", "Experiential Design"],
+      "services": [
+        "Game Development",
+        "Interactive Installation",
+        "Experiential Design"
+      ],
       "industry": "Automotive",
       "agency": "Bond Brand Loyalty",
       "productionCo": null
@@ -633,7 +794,10 @@
     "id": "mio-pov",
     "client": "MiO",
     "title": "MiO POV",
-    "titleLines": ["MiO", "POV"],
+    "titleLines": [
+      "MiO",
+      "POV"
+    ],
     "category": "Digital Experience",
     "featured": false,
     "featuredWide": false,
@@ -645,19 +809,39 @@
     "tagline": "We let music festival crowds broadcast themselves to the billboards at Dundas Square.",
     "pullQuote": "The best way to talk to millennials at a music festival is to put them on a billboard.",
     "copy": [
-      "TAXI knew exactly where MiO\u2019s audience was: NXNE. The challenge was making a product known for personalization feel personal at scale \u2014 to thousands of people at a festival. We built a custom mobile app that let attendees stream their own point-of-view video directly to the giant billboard screens at Dundas Square, live, in real time.",
-      "To make it work without festival WiFi killing the stream, we built a private network on-site and installed custom video streaming hardware that handled real-time moderation before anything hit the screens. Every stream was reviewed before going public \u2014 without any perceptible delay. The campaign won two Promo Awards Gold and an Atomic Awards Gold."
+      "TAXI knew exactly where MiO’s audience was: NXNE. The challenge was making a product known for personalization feel personal at scale — to thousands of people at a festival. We built a custom mobile app that let attendees stream their own point-of-view video directly to the giant billboard screens at Dundas Square, live, in real time.",
+      "To make it work without festival WiFi killing the stream, we built a private network on-site and installed custom video streaming hardware that handled real-time moderation before anything hit the screens. Every stream was reviewed before going public — without any perceptible delay. The campaign won two Promo Awards Gold and an Atomic Awards Gold."
     ],
     "gallery": [
-      { "wide": true,  "seed": "mio-wide1", "alt": "MiO POV billboard stream" },
-      { "wide": false, "seed": "mio-a",     "alt": "NXNE festival activation" },
-      { "wide": false, "seed": "mio-b",     "alt": "Dundas Square screens" },
-      { "wide": true,  "seed": "mio-wide2", "alt": "Streaming app interface" }
+      {
+        "wide": true,
+        "seed": "mio-wide1",
+        "alt": "MiO POV billboard stream"
+      },
+      {
+        "wide": false,
+        "seed": "mio-a",
+        "alt": "NXNE festival activation"
+      },
+      {
+        "wide": false,
+        "seed": "mio-b",
+        "alt": "Dundas Square screens"
+      },
+      {
+        "wide": true,
+        "seed": "mio-wide2",
+        "alt": "Streaming app interface"
+      }
     ],
     "meta": {
       "year": "2015",
       "client": "Kraft Canada",
-      "services": ["Live Streaming", "App Development", "Experiential Technology"],
+      "services": [
+        "Live Streaming",
+        "App Development",
+        "Experiential Technology"
+      ],
       "industry": "Food &amp; Beverage",
       "agency": "TAXI",
       "productionCo": null
@@ -669,7 +853,10 @@
     "id": "michael-hill-bachelor-experience",
     "client": "Michael Hill",
     "title": "Bachelor Experience",
-    "titleLines": ["Bachelor", "Experience"],
+    "titleLines": [
+      "Bachelor",
+      "Experience"
+    ],
     "category": "Experiential",
     "featured": false,
     "featuredWide": false,
@@ -681,19 +868,39 @@
     "tagline": "A virtual bachelor proposed to strangers in malls across Canada. Nobody saw it coming.",
     "pullQuote": "Watch the video for the surprise ending.",
     "copy": [
-      "Launch and CityTV wanted to create a moment for The Bachelor Canada that would escape the screen and live in the real world. We built a large-scale augmented reality installation where a life-sized virtual bachelor \u2014 rendered in real time using Unity and Vuforia AR \u2014 would appear to propose to unsuspecting mall visitors across Canada.",
-      "The technology had to perform flawlessly in unpredictable retail environments: uneven floors, varying lighting, no guaranteed network. We made it work. A viral video capturing the best reactions drove massive reach beyond the installations themselves, connecting CityTV, Media Experts, and Michael Hill in a single activation that was genuinely surprising \u2014 the best kind of advertising."
+      "Launch and CityTV wanted to create a moment for The Bachelor Canada that would escape the screen and live in the real world. We built a large-scale augmented reality installation where a life-sized virtual bachelor — rendered in real time using Unity and Vuforia AR — would appear to propose to unsuspecting mall visitors across Canada.",
+      "The technology had to perform flawlessly in unpredictable retail environments: uneven floors, varying lighting, no guaranteed network. We made it work. A viral video capturing the best reactions drove massive reach beyond the installations themselves, connecting CityTV, Media Experts, and Michael Hill in a single activation that was genuinely surprising — the best kind of advertising."
     ],
     "gallery": [
-      { "wide": true,  "seed": "michaelhill-wide1", "alt": "AR bachelor installation" },
-      { "wide": false, "seed": "michaelhill-a",     "alt": "Virtual proposal moment" },
-      { "wide": false, "seed": "michaelhill-b",     "alt": "Mall activation" },
-      { "wide": true,  "seed": "michaelhill-wide2", "alt": "Visitor reaction" }
+      {
+        "wide": true,
+        "seed": "michaelhill-wide1",
+        "alt": "AR bachelor installation"
+      },
+      {
+        "wide": false,
+        "seed": "michaelhill-a",
+        "alt": "Virtual proposal moment"
+      },
+      {
+        "wide": false,
+        "seed": "michaelhill-b",
+        "alt": "Mall activation"
+      },
+      {
+        "wide": true,
+        "seed": "michaelhill-wide2",
+        "alt": "Visitor reaction"
+      }
     ],
     "meta": {
       "year": "2015",
       "client": "CityTV / Michael Hill",
-      "services": ["AR Development", "Interactive Installation", "Experiential Design"],
+      "services": [
+        "AR Development",
+        "Interactive Installation",
+        "Experiential Design"
+      ],
       "industry": "Entertainment &amp; Retail",
       "agency": "Launch",
       "productionCo": null
