@@ -37,12 +37,14 @@
       {
         "wide": false,
         "seed": "colgate-b",
-        "alt": "Participant moment"
+        "alt": "Participant moment",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/53551ec6-6ed4-4225-87d1-eec7bae03b97-NdIDLe4HiYddBreZMlwUhrWT6yg66p.png"
       },
       {
         "wide": true,
         "seed": "colgate-wide2",
-        "alt": "Flatiron District activation"
+        "alt": "Flatiron District activation",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/c5a538ff-4342-46d3-8f14-b76d37240179-YTW0LfkwlvMkUdDuFbeUsx3X1hRM2V.jpg"
       }
     ],
     "meta": {
