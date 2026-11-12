@@ -130,10 +130,21 @@ function matches(project, values) {
     .every(([field, value]) => CaseCopy.read(project, field) === value);
 }
 
+function releaseEdits() {
+  const changes = { ...edits };
+  if (suggestion !== null) {
+    const { field } = selection;
+    const value = fieldValue(suggestion);
+    if (value === CaseCopy.read(selected, field)) delete changes[field];
+    else changes[field] = value;
+  }
+  return changes;
+}
+
 function updateDraft(inline = false) {
   const { field, paragraph } = selection;
   const definition = CaseCopy.fields[field];
-  const entries = Object.entries(edits);
+  const entries = Object.entries(releaseEdits());
   const hasEdits = entries.length > 0 || imageFiles.size > 0;
   const invalid = entries.some(([key, value]) => !validEdit(key, value));
   const rule = paragraph !== null ? '' :
@@ -143,10 +154,11 @@ function updateDraft(inline = false) {
   changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
     [rule, hasEdits ? `Edited: ${[...new Set([...entries.map(([key]) => key), ...imageFiles.keys()])]
       .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
-  publish.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || !hasEdits || invalid;
+  publish.textContent = suggestion === null ? 'Publish to beta' : 'Publish with AI suggestion';
+  publish.disabled = releasing || pending || checkingImages > 0 || !hasEdits || invalid;
   undo.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || hasEdits ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
-  reset.disabled = releasing || (!hasEdits && checkingImages === 0);
+  reset.disabled = releasing || (!hasEdits && suggestion === null && checkingImages === 0);
   restoreDraft.hidden = !previousDrafts.has(selectionKey());
   restoreDraft.disabled = releasing || pending;
   preview.contentWindow?.postMessage({
@@ -160,7 +172,7 @@ function updateDraft(inline = false) {
     values: {
       ...awaitingDeployment.get(selected.id),
       ...Object.fromEntries(entries.filter(([key, value]) => validEdit(key, value))),
-      ...(suggestion === null ? {} : { [field]: fieldValue(suggestion) }),
+      ...(suggestion === null || entries.some(([key]) => key === field) ? {} : { [field]: CaseCopy.read(selected, field) }),
       ...Object.fromEntries([...imageFiles].map(([key, item]) => [key, item.previewUrl])),
     },
   }, location.origin);
@@ -391,7 +403,7 @@ imageUrl.addEventListener('input', () => { revision++; });
 
 preview.addEventListener('load', () => { if (selected) updateDraft(); });
 projectSelect.addEventListener('change', () => {
-  if ((Object.keys(edits).length || imageFiles.size) && !window.confirm('Discard unpublished edits to this case study?')) {
+  if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
     projectSelect.value = selected.id;
     return;
   }
@@ -477,10 +489,11 @@ async function verifyRelease(projectId, changes) {
 }
 
 async function release(isUndo) {
-  if (releasing || pending || checkingImages > 0 || suggestion !== null || !selected) return;
+  if (releasing || pending || checkingImages > 0 || !selected || (isUndo && suggestion !== null)) return;
   const project = selected;
-  const changes = isUndo ? lastRelease.get(project.id)?.previous : { ...edits };
-  if (!changes || (!Object.keys(changes).length && !imageFiles.size)) return;
+  const changes = isUndo ? lastRelease.get(project.id)?.previous : releaseEdits();
+  if (!changes || (!Object.keys(changes).length && !imageFiles.size) ||
+      !Object.entries(changes).every(([field, value]) => validEdit(field, value))) return;
   releasing = true;
   projectSelect.disabled = draft.disabled = reset.disabled = signOut.disabled = true;
   imageFile.disabled = removeImage.disabled = imageUrl.disabled = imageAlt.disabled = previewImage.disabled = true;
