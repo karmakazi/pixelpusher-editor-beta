@@ -213,17 +213,20 @@
       {
         "wide": true,
         "seed": "web-wide1",
-        "alt": "IBC website redesign"
+        "alt": "IBC website redesign",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/822e3a27-47df-423a-93e8-cd1f14608d01-bIbd0KGJCF5GRmNWHM7kdJTVXptnzc.jpg"
       },
       {
         "wide": false,
         "seed": "web-a",
-        "alt": "H&amp;R Block site"
+        "alt": "H&amp;R Block site",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/17d6269e-9a7f-4104-b831-b4827aefd91a-k4f6dnwF5lM3RcBpwUy3lQbrtVqJc8.jpg"
       },
       {
         "wide": false,
         "seed": "web-b",
-        "alt": "Karis website"
+        "alt": "Karis website",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/5590577a-fbe5-4a73-9e7d-18ab87b0ae75-eCSapDz1GrU6eRQoN1HmwDE8TqR9C5.jpg"
       },
       {
         "wide": true,
