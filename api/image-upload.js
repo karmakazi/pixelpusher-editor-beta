@@ -36,6 +36,7 @@ module.exports = async function imageUpload(req, res) {
       allowedContentTypes: [contentType],
       maximumSizeInBytes: size,
       validUntil: Date.now() + 5 * 60 * 1000,
+      addRandomSuffix: true,
       allowOverwrite: false,
     });
     return res.status(200).json({ pathname, token });
