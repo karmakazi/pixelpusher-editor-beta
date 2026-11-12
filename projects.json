@@ -258,7 +258,7 @@
       "Change"
     ],
     "category": "Social &amp; Content",
-    "featured": false,
+    "featured": true,
     "featuredWide": false,
     "wide": false,
     "vimeoId": "568926171",
@@ -309,7 +309,8 @@
       "productionCo": null
     },
     "nextProject": "cadillac-xt4",
-    "comingSoon": false
+    "comingSoon": false,
+    "featuredOrder": 6
   },
   {
     "id": "rick-hansen-poster-for-everyone",
@@ -561,8 +562,7 @@
       "Blanche"
     ],
     "category": "Experiential",
-    "featured": true,
-    "featuredOrder": 6,
+    "featured": false,
     "featuredWide": true,
     "wide": false,
     "vimeoId": "302507180",
