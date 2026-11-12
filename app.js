@@ -427,6 +427,29 @@ function buildGrid(projects, isHome) {
   }).join('');
 }
 
+function updatePortfolioCards(grid, projects, featured) {
+  const existing = new Map([...grid.children].map(card => [card.dataset.portfolioCard, card]));
+  const template = document.createElement('template');
+  template.innerHTML = buildGrid(projects, featured);
+  for (const [index, fresh] of [...template.content.children].entries()) {
+    const id = fresh.dataset.portfolioCard;
+    const card = existing.get(id) ?? fresh;
+    existing.delete(id);
+    if (card !== fresh) {
+      card.className = fresh.className;
+      const picked = fresh.querySelector('.portfolio-select').getAttribute('aria-pressed');
+      const select = card.querySelector('.portfolio-select');
+      select.setAttribute('aria-pressed', picked);
+      select.disabled = portfolioLocked;
+      card.querySelector('.portfolio-arrows')?.remove();
+      const arrows = fresh.querySelector('.portfolio-arrows');
+      if (arrows) card.append(arrows);
+    }
+    if (grid.children[index] !== card) grid.insertBefore(card, grid.children[index] || null);
+  }
+  for (const card of existing.values()) card.remove();
+}
+
 function renderPortfolioGrid(view) {
   const featured = view === 'featured';
   const sameView = currentView === (featured ? 'home' : 'work');
@@ -435,7 +458,7 @@ function renderPortfolioGrid(view) {
     : portfolioPreview;
   const focusedAction = document.activeElement?.dataset.portfolioAction;
   const grid = document.querySelector('.work-grid');
-  if (sameView && grid) grid.innerHTML = buildGrid(cards, featured);
+  if (sameView && grid) updatePortfolioCards(grid, cards, featured);
   else if (featured) {
     renderHome();
     document.querySelector('#work')?.scrollIntoView();
@@ -951,7 +974,7 @@ fetch('projects.json')
   .then(r => r.json())
   .then(data => {
     PROJECTS = data;
-    route();
+    if (!portfolioPreview) route();
   })
   .catch(() => {
     document.getElementById('app').innerHTML =

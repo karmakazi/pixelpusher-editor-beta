@@ -737,7 +737,15 @@ openPortfolio.onclick = () => {
   if (releasing || pending || checkingImages || !selected) return;
   if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
       !window.confirm('Discard unpublished edits to this case study?')) return;
-  selectProject();
+  revision++;
+  edits = {};
+  clearFiles();
+  previousDrafts.clear();
+  suggestion = null;
+  aiNote = '';
+  imageSelection = null;
+  positionImageTools();
+  portfolioList.value = 'work';
   caseControls.hidden = openPortfolio.hidden = true;
   portfolioControls.hidden = false;
   portfolioBase = projects;
