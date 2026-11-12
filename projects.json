@@ -315,7 +315,10 @@
     "id": "rick-hansen-poster-for-everyone",
     "client": "Rick Hansen Foundation",
     "title": "Poster for Everyone",
-    "titleLines": ["Poster for", "Everyone"],
+    "titleLines": [
+      "Poster for",
+      "Everyone"
+    ],
     "category": "Campaign",
     "featured": false,
     "featuredWide": false,
@@ -324,22 +327,45 @@
     "thumbSeed": "rickhansen-pp",
     "heroSeed": "hansen-hero",
     "heroImg": "img/hansen-hero.png",
-    "tagline": "A poster that reads the room \u2014 and rearranges itself for whoever is standing in front of it.",
-    "pullQuote": "Accessibility isn\u2019t a feature you add at the end. It\u2019s the whole idea.",
+    "tagline": "A poster that reads the room — and rearranges itself for whoever is standing in front of it.",
+    "pullQuote": "Accessibility isn’t a feature you add at the end. It’s the whole idea.",
     "copy": [
-      "TAXI and the Rick Hansen Foundation gave us a challenge with no precedent: build a poster that changes for the person looking at it. Using a Microsoft Kinect sensor, the installation detects the viewer\u2019s height and distance in real time \u2014 adjusting font size and layout to accommodate someone in a wheelchair, someone with low vision, or a child. Nobody sees the same poster twice. We also built in ambient language detection: it listens for the language being spoken nearby and changes its display accordingly.",
-      "What started as a prototype for an RHF campaign became a proof of concept for a different kind of public communication \u2014 one where the message adapts to the audience instead of demanding the audience adapt to the message. The project earned a One Show Merit and a Strategy Magazine Silver."
+      "TAXI and the Rick Hansen Foundation gave us a challenge with no precedent: build a poster that changes for the person looking at it. Using a Microsoft Kinect sensor, the installation detects the viewer’s height and distance in real time — adjusting font size and layout to accommodate someone in a wheelchair, someone with low vision, or a child. Nobody sees the same poster twice. We also built in ambient language detection: it listens for the language being spoken nearby and changes its display accordingly.",
+      "What started as a prototype for an RHF campaign became a proof of concept for a different kind of public communication — one where the message adapts to the audience instead of demanding the audience adapt to the message. The project earned a One Show Merit and a Strategy Magazine Silver."
     ],
     "gallery": [
-      { "wide": true,  "seed": "hansen-wide1", "alt": "Poster for Everyone installation" },
-      { "wide": false, "seed": "hansen-a",     "alt": "Kinect sensor tracking" },
-      { "wide": false, "seed": "hansen-b",     "alt": "Adaptive layout detail" },
-      { "wide": true,  "seed": "hansen-wide2", "alt": "Public installation" }
+      {
+        "wide": true,
+        "seed": "hansen-wide1",
+        "alt": "Poster for Everyone installation"
+      },
+      {
+        "wide": false,
+        "seed": "hansen-a",
+        "alt": "Kinect sensor tracking",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/7626741c-abd9-4de0-9532-90496d1da7a4-MpTsvnLgIilFYnA0Cm4zsgnUqWunpu.png"
+      },
+      {
+        "wide": false,
+        "seed": "hansen-b",
+        "alt": "Adaptive layout detail",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/b59b1d1c-4e2f-4c20-b6a8-768ab7a601f7-1OWWINSuRQex28aXfdzn7kDuMDucvh.png"
+      },
+      {
+        "wide": true,
+        "seed": "hansen-wide2",
+        "alt": "Public installation",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/596cc437-96cd-4c8c-a76c-8afae0c8a09c-yVIpscHJY698MvRfqwiRggTiDZYm4d.png"
+      }
     ],
     "meta": {
       "year": "2019",
       "client": "Rick Hansen Foundation",
-      "services": ["Interactive Installation", "Sensor Technology", "Accessible Design"],
+      "services": [
+        "Interactive Installation",
+        "Sensor Technology",
+        "Accessible Design"
+      ],
       "industry": "Non-Profit",
       "agency": "TAXI",
       "productionCo": null
