@@ -191,7 +191,10 @@
     "id": "pixelpusher-recent-web-sites",
     "client": "Pixelpusher",
     "title": "Recent Web Sites",
-    "titleLines": ["Recent", "Web Sites"],
+    "titleLines": [
+      "Recent",
+      "Web Sites"
+    ],
     "category": "Digital Experience",
     "featured": false,
     "featuredWide": false,
@@ -199,23 +202,43 @@
     "vimeoId": null,
     "thumbSeed": "websites-pp",
     "heroSeed": "websites-hero",
-    "heroImg": null,
-    "tagline": "Fast, stable, and built to last \u2014 websites that work as hard as the brands behind them.",
+    "heroImg": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/310ff83c-84a4-49cc-900d-82f9e392f244-837qMDJwm9xTLszCJ1G6iydE8iHgyO.png",
+    "tagline": "Fast, stable, and built to last — websites that work as hard as the brands behind them.",
     "pullQuote": "The best website is the one nobody notices. They just feel like the brand finally makes sense.",
     "copy": [
-      "IBC needed a complete rebuild of an architecture that had grown unwieldy from years of constant updates. We restructured their content and rebuilt on StoryBlok headless CMS, making it intuitive for the team to manage and for visitors to navigate. H&amp;R Block\u2019s WordPress site was crashing every tax season under peak traffic load \u2014 we moved them to a static generator with CraftCMS, and it hasn\u2019t gone down since. For Karis, a rebrand and repositioning called for a new site that could flex with an evolving identity \u2014 we delivered it on StoryBlok with the flexibility they needed.",
-      "Three different organizations, three different problems, one consistent principle: the platform should disappear and the brand should speak. These are a few of the sites we\u2019ve built recently that do exactly that."
+      "IBC needed a complete rebuild of an architecture that had grown unwieldy from years of constant updates. We restructured their content and rebuilt on StoryBlok headless CMS, making it intuitive for the team to manage and for visitors to navigate. H&amp;R Block’s WordPress site was crashing every tax season under peak traffic load — we moved them to a static generator with CraftCMS, and it hasn’t gone down since. For Karis, a rebrand and repositioning called for a new site that could flex with an evolving identity — we delivered it on StoryBlok with the flexibility they needed.",
+      "Three different organizations, three different problems, one consistent principle: the platform should disappear and the brand should speak. These are a few of the sites we’ve built recently that do exactly that."
     ],
     "gallery": [
-      { "wide": true,  "seed": "web-wide1", "alt": "IBC website redesign" },
-      { "wide": false, "seed": "web-a",     "alt": "H&amp;R Block site" },
-      { "wide": false, "seed": "web-b",     "alt": "Karis website" },
-      { "wide": true,  "seed": "web-wide2", "alt": "Interface design detail" }
+      {
+        "wide": true,
+        "seed": "web-wide1",
+        "alt": "IBC website redesign"
+      },
+      {
+        "wide": false,
+        "seed": "web-a",
+        "alt": "H&amp;R Block site"
+      },
+      {
+        "wide": false,
+        "seed": "web-b",
+        "alt": "Karis website"
+      },
+      {
+        "wide": true,
+        "seed": "web-wide2",
+        "alt": "Interface design detail"
+      }
     ],
     "meta": {
       "year": "2024",
       "client": "IBC, H&amp;R Block, Karis",
-      "services": ["UX &amp; Design", "Web Development", "Headless CMS"],
+      "services": [
+        "UX &amp; Design",
+        "Web Development",
+        "Headless CMS"
+      ],
       "industry": "Various",
       "agency": null,
       "productionCo": null
