@@ -40,5 +40,3 @@ iframe.mobile { width: min(100%, 390px); }
 #commit, #live { color: #d9f36c; font-size: .82rem; margin-right: .8rem; }
 #original { white-space: pre-wrap; max-height: 12rem; overflow: auto; }
 #changes { color: #c7c7bf; font-size: .82rem; line-height: 1.5; }
-#preview-image { margin-top: .25rem; }
-#image-status { font-size: .85rem; line-height: 1.5; }

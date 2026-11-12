@@ -4,6 +4,9 @@ const projectSelect = document.querySelector('#project');
 const selectionLabel = document.querySelector('#selection');
 const changeSummary = document.querySelector('#changes');
 const copyControls = document.querySelector('#copy-controls');
+const imageTools = document.querySelector('#image-tools');
+const imageHeading = document.querySelector('#image-heading');
+const closeImage = document.querySelector('#close-image');
 const imageControls = document.querySelector('#image-controls');
 const imageFile = document.querySelector('#image-file');
 const chosenImage = document.querySelector('#chosen-image');
@@ -161,6 +164,7 @@ function updateDraft(inline = false) {
   reset.disabled = releasing || (!hasEdits && suggestion === null && checkingImages === 0);
   restoreDraft.hidden = !previousDrafts.has(selectionKey());
   restoreDraft.disabled = releasing || pending;
+  positionImageTools();
   preview.contentWindow?.postMessage({
     type: 'pixelpusher-copy-preview',
     projectId: selected.id,
@@ -178,12 +182,55 @@ function updateDraft(inline = false) {
   }, location.origin);
 }
 
+function positionImageTools() {
+  const doc = preview.contentDocument;
+  const viewport = preview.contentWindow;
+  const anchor = imageSelection && doc?.querySelector(
+    imageSelection === 'hero' ? '.edit-hero-image' : `[data-edit-image="${imageSelection}"]`
+  );
+  imageTools.hidden = !anchor || releasing;
+  if (imageTools.hidden) return;
+  const rect = anchor.getBoundingClientRect();
+  imageTools.hidden = rect.bottom < 0 || rect.top > viewport.innerHeight;
+  if (imageTools.hidden) return;
+  const docked = viewport.innerWidth < 520;
+  imageTools.classList.toggle('copy-ai-docked', docked);
+  if (docked) {
+    imageTools.style.removeProperty('left');
+    imageTools.style.removeProperty('top');
+    return;
+  }
+  const { width, height } = imageTools.getBoundingClientRect();
+  imageTools.style.left = `${Math.max(12, Math.min(rect.left, viewport.innerWidth - width - 12))}px`;
+  const below = rect.bottom + 8;
+  const top = below + height <= viewport.innerHeight - 8 ? below : rect.top - height - 8;
+  imageTools.style.top = `${Math.max(8, Math.min(top, viewport.innerHeight - height - 8))}px`;
+}
+
+function closeImageTools() {
+  const anchor = preview.contentDocument?.querySelector(
+    imageSelection === 'hero' ? '.edit-hero-image' : `[data-edit-image="${imageSelection}"]`
+  );
+  revision++;
+  imageSelection = null;
+  showField();
+  anchor?.focus();
+}
+
+closeImage.addEventListener('click', closeImageTools);
+imageTools.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeImageTools();
+});
+const imageToolsResize = new ResizeObserver(positionImageTools);
+imageToolsResize.observe(imageControls);
+
 function showField() {
   copyControls.hidden = Boolean(imageSelection);
-  imageControls.hidden = !imageSelection;
+  positionImageTools();
   if (imageSelection) {
     selectionLabel.textContent = imageSelection === 'hero' ? 'Hero image' :
       `Gallery image ${Number(imageSelection.split(':')[1]) + 1}`;
+    imageHeading.textContent = `Replace ${selectionLabel.textContent.toLowerCase()}`;
     for (const [name, input] of [['url', imageUrl], ['alt', imageAlt]]) {
       const field = `${imageSelection}:${name}`;
       input.value = edits[field] ?? CaseCopy.read(selected, field);
@@ -195,6 +242,7 @@ function showField() {
     chosenImage.textContent = file ? file.file.name : '';
     imageFile.disabled = removeImage.disabled = previewImage.disabled = releasing;
     imageStatus.textContent = '';
+    positionImageTools();
     updateDraft();
     return;
   }
@@ -264,6 +312,7 @@ window.addEventListener('message', event => {
     aiNote = '';
     imageSelection = image;
     showField();
+    imageFile.focus({ preventScroll: true });
     return;
   }
   if (!Object.hasOwn(CaseCopy.fields, field)) return;
@@ -342,6 +391,7 @@ imageFile.addEventListener('change', async () => {
     staged = true;
     showField();
     imageStatus.textContent = 'File ready to publish.';
+    positionImageTools();
   } catch {
     if (revision === requestedRevision) imageStatus.textContent = 'This file could not be opened as an image.';
   } finally {
@@ -401,7 +451,15 @@ imageControls.addEventListener('submit', async event => {
 
 imageUrl.addEventListener('input', () => { revision++; });
 
-preview.addEventListener('load', () => { if (selected) updateDraft(); });
+preview.addEventListener('load', () => {
+  const doc = preview.contentDocument;
+  if (!doc?.body?.classList.contains('editor-preview')) return;
+  doc.body.append(imageTools);
+  preview.contentWindow.addEventListener('scroll', positionImageTools, { passive: true });
+  preview.contentWindow.addEventListener('resize', positionImageTools);
+  positionImageTools();
+  if (selected) updateDraft();
+});
 projectSelect.addEventListener('change', () => {
   if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
     projectSelect.value = selected.id;
