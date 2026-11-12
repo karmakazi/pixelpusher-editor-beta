@@ -74,7 +74,9 @@ module.exports = async function publish(req, res) {
       try {
         let candidates = projects;
         if (newProject) {
-          const created = Portfolio.create(newProject);
+          const created = newProject.draftId
+            ? Portfolio.newDraft(newProject.draftId, newProject.changes, newProject.id)
+            : Portfolio.create(newProject);
           if (projects.some(project => project.id === created.id)) throw Error('That project URL already exists.');
           candidates = [...projects, created];
         }

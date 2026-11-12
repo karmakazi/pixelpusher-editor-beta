@@ -1,5 +1,6 @@
 const { isSignedIn } = require('../lib/editor-session');
 const CaseCopy = require('../editor/case-copy');
+const Portfolio = require('../editor/portfolio');
 const projects = require('../projects.json');
 
 module.exports = async function draft(req, res) {
@@ -20,7 +21,8 @@ module.exports = async function draft(req, res) {
   const { projectId, instruction, field = 'tagline', current, originalCopy, paragraph = null } = req.body || {};
   const isParagraph = paragraph !== null;
   const legacy = req.body?.field === undefined;
-  const project = projects.find(item => item.id === projectId && !item.comingSoon);
+  const project = projects.find(item => item.id === projectId && !item.comingSoon) ||
+    (typeof projectId === 'string' && /^draft-[a-f0-9-]{36}$/.test(projectId) ? Portfolio.starter(projectId) : null);
   if (!project || !Object.hasOwn(CaseCopy.fields, field) ||
       [current, originalCopy].some(value => value !== undefined &&
         (typeof value !== 'string' || value.length > CaseCopy.fields[field].max)) ||
@@ -49,7 +51,7 @@ module.exports = async function draft(req, res) {
         store: false,
         reasoning: { effort: 'none' },
         max_output_tokens: field === 'copy' ? 4200 : 600,
-        instructions: 'Rewrite only the requested case study field in plain text. Use workingDraft as the text to revise for follow-ups such as “make it shorter,” even when it differs from publishedCopy. Use publishedCopy as the rewrite target only if the editor explicitly refers to the published or original version. Use the other fields as factual context. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. When the selected field is a body paragraph, return exactly one paragraph with no line breaks. For whole body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
+        instructions: 'Rewrite only the requested case study field in plain text. Treat template placeholders as editing instructions, never as project facts. Use workingDraft as the text to revise for follow-ups such as “make it shorter,” even when it differs from publishedCopy. Use publishedCopy as the rewrite target only if the editor explicitly refers to the published or original version. Use the other fields as factual context. Preserve project facts and credits unless the editor explicitly supplies a correction. Ask for missing facts when needed by returning null and a note. Multiple sentences are allowed in the intro. When the selected field is a body paragraph, return exactly one paragraph with no line breaks. For whole body copy, separate paragraphs with a blank line. For title and services, use one item per line. Keep other fields on one line.',
         input: JSON.stringify({
           field: label,
           maxCharacters: definition.max,

@@ -5,6 +5,7 @@ let PROJECTS = [];
 let currentView = null;
 let revealObs = null;
 let casePreview = null;
+const draftCaseId = new URLSearchParams(location.search).get('draft-case');
 let portfolioPreview = null;
 let portfolioSelectedCard = null;
 let portfolioLocked = false;
@@ -318,7 +319,7 @@ window.addEventListener('hashchange', route);
 window.addEventListener('resize', () => { if (currentView && currentView.startsWith('case')) fitTitle(); });
 
 function route() {
-  if (!PROJECTS.length) return;
+  if (!PROJECTS.length && !(editorPreview && draftCaseId)) return;
 
   const hash = location.hash;
 
@@ -756,7 +757,8 @@ function renderWork() {
 
 // ── RENDER: CASE STUDY ────────────────────────────────────
 function renderCase(id, preserveScroll = false) {
-  const stored = (portfolioPreview || PROJECTS).find(x => x.id === id);
+  const stored = editorPreview && draftCaseId === id && /^draft-[a-f0-9-]{36}$/.test(id)
+    ? Portfolio.starter(id) : (portfolioPreview || PROJECTS).find(x => x.id === id);
   const p = stored && casePreview?.projectId === id ? CaseCopy.apply(stored, casePreview.values) : stored;
 
   if (!p || p.comingSoon) {

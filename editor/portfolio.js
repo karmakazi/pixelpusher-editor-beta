@@ -27,6 +27,52 @@ const Portfolio = ((CaseCopy) => {
     }, { ...values, clientCredit: values.client, 'hero:url': input.image, 'hero:alt': input.alt ?? '' });
   }
 
+  function starter(id) {
+    const placeholder = '/img/case-study-placeholder.png';
+    return {
+      id, client: 'Brand name', title: 'Project title',
+      tagline: 'Write a short introduction to this project.',
+      pullQuote: 'Add a quote or a standout line from the project.',
+      copy: ['Describe the brief and what your team set out to achieve.',
+        'Describe what you made and what happened next.'],
+      meta: { client: 'Client name', agency: '', services: [], industry: '' },
+      heroImg: placeholder, heroAlt: 'Hero image placeholder',
+      gallery: [
+        { wide: false, src: placeholder, alt: 'Gallery image placeholder' },
+        { wide: false, src: placeholder, alt: 'Gallery image placeholder' },
+      ],
+      comingSoon: false,
+    };
+  }
+
+  function newDraft(id, changes, finalId) {
+    if (!/^draft-[a-f0-9-]{36}$/.test(id) ||
+        !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(finalId) || finalId.length > 100) {
+      throw Error('Invalid project URL.');
+    }
+    const project = starter(id);
+    for (const [field, value] of Object.entries(changes)) {
+      if (!CaseCopy.hasField(project, field) || !CaseCopy.valid(field, value) ||
+          CaseCopy.normalize(field, value) !== value) throw Error('Check the edited case-study fields.');
+    }
+    const updated = CaseCopy.apply(project, changes);
+    for (const field of ['client', 'title', 'tagline', 'copy']) {
+      const original = CaseCopy.read(project, field);
+      const edited = CaseCopy.read(updated, field);
+      if (edited.split('\n\n').some(value => original.split('\n\n').includes(value))) {
+        throw Error('Replace the placeholder brand, title, intro and body copy before publishing.');
+      }
+    }
+    if (!updated.heroImg || updated.heroImg === project.heroImg) throw Error('Replace the placeholder hero image before publishing.');
+    if (updated.meta.client === project.meta.client) updated.meta.client = updated.client;
+    if (updated.heroAlt === project.heroAlt) delete updated.heroAlt;
+    for (const image of updated.gallery) if (image.alt === 'Gallery image placeholder') image.alt = '';
+    if (updated.pullQuote === project.pullQuote) updated.pullQuote = '';
+    updated.gallery = updated.gallery.filter(image => image.src && image.src !== project.heroImg);
+    updated.id = finalId;
+    return updated;
+  }
+
   function arrange(projects, lists) {
     const byId = new Map(projects.map(project => [project.id, project]));
     if (!Array.isArray(lists?.work) || !Array.isArray(lists.featured) ||
@@ -47,7 +93,7 @@ const Portfolio = ((CaseCopy) => {
     });
   }
 
-  return { order, create, arrange };
+  return { order, create, starter, newDraft, arrange };
 })(typeof module !== 'undefined' ? require('./case-copy') : CaseCopy);
 
 if (typeof module !== 'undefined') module.exports = Portfolio;

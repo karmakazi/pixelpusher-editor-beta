@@ -1,5 +1,8 @@
 'use strict';
 
+const newCaseButton = document.querySelector('#new-case');
+const caseHint = document.querySelector('#case-hint');
+let draftCase = null;
 const projectSelect = document.querySelector('#project');
 const selectionLabel = document.querySelector('#selection');
 const changeSummary = document.querySelector('#changes');
@@ -149,16 +152,27 @@ function updateDraft(inline = false) {
   const definition = CaseCopy.fields[field];
   const entries = Object.entries(releaseEdits());
   const hasEdits = entries.length > 0 || imageFiles.size > 0;
+  let draftError = '';
+  if (selected === draftCase) {
+    try {
+      Portfolio.newDraft(selected.id, {
+        ...Object.fromEntries([...imageFiles.keys()].map(field => [field, '/img/pending-upload.png'])),
+        ...releaseEdits(),
+      }, 'new-case-study');
+    } catch (error) {
+      draftError = error.message;
+    }
+  }
   const invalid = entries.some(([key, value]) => !validEdit(key, value));
   const rule = paragraph !== null ? '' :
     definition.list ? 'Enter one item per line.' : '';
   document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
   draft.setAttribute('aria-invalid', String(!validEdit(field, edits[field] ?? CaseCopy.read(selected, field))));
-  changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
+  changeSummary.textContent = draftError || (invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
     [rule, hasEdits ? `Edited: ${[...new Set([...entries.map(([key]) => key), ...imageFiles.keys()])]
-      .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
+      .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim());
   publish.textContent = suggestion === null ? 'Publish to beta' : 'Publish with AI suggestion';
-  publish.disabled = releasing || pending || checkingImages > 0 || !hasEdits || invalid;
+  publish.disabled = releasing || pending || checkingImages > 0 || !hasEdits || invalid || Boolean(draftError);
   undo.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || hasEdits ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
   reset.disabled = releasing || (!hasEdits && suggestion === null && checkingImages === 0);
@@ -225,7 +239,7 @@ const imageToolsResize = new ResizeObserver(positionImageTools);
 imageToolsResize.observe(imageControls);
 
 function showField() {
-  copyControls.hidden = Boolean(imageSelection);
+  copyControls.hidden = Boolean(imageSelection) || selected === draftCase;
   positionImageTools();
   if (imageSelection) {
     selectionLabel.textContent = imageSelection === 'hero' ? 'Hero image' :
@@ -259,7 +273,9 @@ function showField() {
 
 function selectProject() {
   revision++;
-  selected = projects.find(project => project.id === projectSelect.value);
+  selected = draftCase?.id === projectSelect.value ? draftCase : projects.find(project => project.id === projectSelect.value);
+  newCaseButton.disabled = Boolean(draftCase);
+  caseHint.textContent = selected === draftCase ? 'Draft case study. Click the placeholder text and images to replace them.' : 'Click text or an image in the preview to edit it.';
   edits = {};
   clearFiles();
   previousDrafts.clear();
@@ -269,9 +285,19 @@ function selectProject() {
   imageSelection = null;
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
-  preview.src = `/?editor-preview=1&view=${revision}#/work/${encodeURIComponent(selected.id)}`;
+  preview.src = `/?editor-preview=1&view=${revision}${selected === draftCase ? `&draft-case=${selected.id}` : ''}#/work/${encodeURIComponent(selected.id)}`;
   showField();
 }
+
+newCaseButton.onclick = () => {
+  if (releasing || pending || checkingImages) return;
+  if (draftCase) return;
+  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+      !window.confirm('Discard unpublished edits to this case study?')) return;
+  draftCase = Portfolio.starter(`draft-${crypto.randomUUID()}`);
+  loadProjectOptions(draftCase.id);
+  selectProject();
+};
 
 function fieldValue(text) {
   const { field, paragraph } = selection;
@@ -461,9 +487,14 @@ preview.addEventListener('load', () => {
   if (selected) updateDraft();
 });
 projectSelect.addEventListener('change', () => {
-  if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
+  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
     projectSelect.value = selected.id;
     return;
+  }
+  if (selected === draftCase && projectSelect.value !== draftCase.id) {
+    const next = projectSelect.value;
+    draftCase = null;
+    loadProjectOptions(next);
   }
   selectProject();
 });
@@ -566,6 +597,8 @@ function showReleaseResult(live, restored, href, label) {
 async function release(isUndo) {
   if (releasing || pending || checkingImages > 0 || !selected || (isUndo && suggestion !== null)) return;
   const project = selected;
+  const creating = project === draftCase;
+  if (creating && (isUndo || publish.disabled)) return;
   const changes = isUndo ? lastRelease.get(project.id)?.previous : releaseEdits();
   if (!changes || (!Object.keys(changes).length && !imageFiles.size) ||
       !Object.entries(changes).every(([field, value]) => validEdit(field, value))) return;
@@ -586,6 +619,10 @@ async function release(isUndo) {
         changes[field] = item.uploadedUrl;
       }
       releaseStatus.textContent = 'Publishing to GitHub…';
+    }
+    if (creating) {
+      await publishNewCase(project, changes);
+      return;
     }
     const previous = Object.fromEntries(Object.keys(changes).map(field => [field, CaseCopy.read(project, field)]));
     const response = await fetch('/api/publish', {
@@ -651,7 +688,7 @@ fetch('/projects.json')
       projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
     if (!projectSelect.options.length) throw new Error('No case studies available.');
-    projectSelect.disabled = openPortfolio.disabled = false;
+    projectSelect.disabled = openPortfolio.disabled = newCaseButton.disabled = false;
     selectProject();
   })
   .catch(error => { status.textContent = error.message; });
@@ -666,50 +703,40 @@ const portfolioStatus = document.querySelector('#portfolio-status');
 const publishPortfolio = document.querySelector('#publish-portfolio');
 const undoPortfolio = document.querySelector('#undo-portfolio');
 const resetPortfolio = document.querySelector('#reset-portfolio');
-const newCaseForm = document.querySelector('#new-case-form');
-const newImage = document.querySelector('#new-image');
 let lists;
-let newProject;
-let newFile;
-let uploadedHero;
 let portfolioUndo;
 let portfolioView;
 let portfolioBase;
 let selectedCard;
 
 function resetPortfolioDraft() {
-  newCaseForm.reset();
-  delete newCaseForm.elements.id.dataset.manual;
   selectedCard = null;
   lists = Portfolio.order(projects);
-  newProject = null;
-  if (newFile) URL.revokeObjectURL(newFile.previewUrl);
-  newFile = uploadedHero = null;
   portfolioView = portfolioList.value;
 }
 
 function previewPortfolio() {
   if (portfolioControls.hidden) return;
   preview.contentWindow?.postMessage({
-    type: 'pixelpusher-portfolio-preview', lists, newProject, view: portfolioView, base: portfolioBase, selectedCard, locked: releasing,
+    type: 'pixelpusher-portfolio-preview', lists, view: portfolioView, base: portfolioBase, selectedCard, locked: releasing,
   }, location.origin);
 }
 
 function portfolioDirty() {
-  return Boolean(newProject) || JSON.stringify(lists) !== JSON.stringify(Portfolio.order(projects));
+  return JSON.stringify(lists) !== JSON.stringify(Portfolio.order(projects));
 }
 
 function renderPortfolio() {
   const key = portfolioList.value;
   const ids = lists[key];
-  const candidates = newProject ? [...projects, newProject] : projects;
+  const candidates = projects;
   portfolioOptions.replaceChildren();
   if (key === 'featured') {
     const add = document.createElement('select');
     add.setAttribute('aria-label', 'Feature a project');
     add.add(new Option('Feature a project…', ''));
     for (const item of candidates.filter(project => !ids.includes(project.id))) {
-      add.add(new Option(item === newProject ? item.title : CaseCopy.read(item, 'title').replaceAll('\n', ' '), item.id));
+      add.add(new Option(CaseCopy.read(item, 'title').replaceAll('\n', ' '), item.id));
     }
     add.disabled = releasing || add.options.length === 1;
     add.onchange = () => {
@@ -720,19 +747,10 @@ function renderPortfolio() {
     };
     portfolioOptions.append(add);
   }
-  if (newProject) {
-    const view = document.createElement('button');
-    view.type = 'button';
-    view.className = 'secondary';
-    view.textContent = 'Preview new case study';
-    view.onclick = () => { portfolioView = 'new'; previewPortfolio(); };
-    portfolioOptions.append(view);
-  }
   publishPortfolio.disabled = releasing || !portfolioDirty();
   undoPortfolio.disabled = releasing || portfolioDirty() || !portfolioUndo;
   resetPortfolio.disabled = releasing || !portfolioDirty();
   backToEditor.disabled = signOut.disabled = releasing;
-  newCaseForm.querySelector('button').disabled = releasing || Boolean(newProject);
   previewPortfolio();
 }
 
@@ -741,12 +759,13 @@ function loadProjectOptions(preferred) {
   for (const project of projects.filter(item => !item.comingSoon)) {
     projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
   }
-  if (projects.some(project => project.id === preferred && !project.comingSoon)) projectSelect.value = preferred;
+  if (draftCase) projectSelect.add(new Option('New case study (draft)', draftCase.id));
+  if ([...projectSelect.options].some(option => option.value === preferred)) projectSelect.value = preferred;
 }
 
 openPortfolio.onclick = () => {
   if (releasing || pending || checkingImages || !selected) return;
-  if ((Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
       !window.confirm('Discard unpublished edits to this case study?')) return;
   revision++;
   edits = {};
@@ -758,6 +777,13 @@ openPortfolio.onclick = () => {
   positionImageTools();
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
+  if (selected === draftCase) {
+    draftCase = null;
+    loadProjectOptions();
+    selected = projects.find(project => project.id === projectSelect.value);
+  }
+  newCaseButton.hidden = true;
+  newCaseButton.disabled = false;
   portfolioList.value = 'work';
   caseControls.hidden = openPortfolio.hidden = true;
   portfolioControls.hidden = false;
@@ -770,7 +796,7 @@ backToEditor.onclick = () => {
   if (portfolioDirty() && !window.confirm('Discard unpublished changes to the portfolio?')) return;
   resetPortfolioDraft();
   portfolioControls.hidden = true;
-  caseControls.hidden = openPortfolio.hidden = false;
+  caseControls.hidden = openPortfolio.hidden = newCaseButton.hidden = false;
   loadProjectOptions(selected?.id);
   selectProject();
 };
@@ -778,56 +804,37 @@ backToEditor.onclick = () => {
 portfolioList.onchange = () => { selectedCard = null; portfolioView = portfolioList.value; renderPortfolio(); };
 resetPortfolio.onclick = () => { resetPortfolioDraft(); renderPortfolio(); };
 
-newCaseForm.elements.title.addEventListener('input', () => {
-  const slug = newCaseForm.elements.id;
-  if (!slug.dataset.manual) slug.value = newCaseForm.elements.title.value.toLowerCase()
-    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100).replace(/-$/, '');
-});
-newCaseForm.elements.id.addEventListener('input', () => { newCaseForm.elements.id.dataset.manual = 'true'; });
-
-newCaseForm.onsubmit = async event => {
-  event.preventDefault();
-  if (newProject || releasing) return;
-  const input = Object.fromEntries(new FormData(newCaseForm));
-  if (projects.some(project => project.id === input.id)) {
-    portfolioStatus.textContent = 'That project URL is already in use.';
-    return;
-  }
-  const file = newImage.files[0];
-  let previewUrl;
-  try {
-    if (file) {
-      if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(file.type) || !file.size || file.size > 20 * 1024 * 1024) {
-        throw Error('Choose a JPEG, PNG, WebP, GIF, or AVIF image up to 20 MB.');
-      }
-      previewUrl = URL.createObjectURL(file);
-      const image = new Image();
-      image.src = previewUrl;
-      await image.decode();
-      if (portfolioControls.hidden || newProject || releasing) {
-        URL.revokeObjectURL(previewUrl);
-        return;
-      }
-      input.image = previewUrl;
-    }
-    Portfolio.create(input, location.origin);
-    newProject = input;
-    newFile = file ? { file, previewUrl } : null;
-    lists.work.unshift(input.id);
-    portfolioView = 'new';
-    document.querySelector('#new-case').open = false;
-    portfolioStatus.textContent = 'Case study added to the draft. Publish when ready.';
-    renderPortfolio();
-  } catch (error) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    portfolioStatus.textContent = error.message;
-  }
-};
+async function publishNewCase(project, changes) {
+  const before = Portfolio.order(projects);
+  const title = changes.title ?? CaseCopy.read(project, 'title');
+  const slug = title.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80).replace(/-$/, '') || 'case-study';
+  let id = slug;
+  for (let suffix = 2; before.work.includes(id); suffix++) id = `${slug}-${suffix}`;
+  const expected = Portfolio.newDraft(project.id, changes, id);
+  const after = { work: [id, ...before.work], featured: before.featured };
+  const response = await fetch('/api/publish', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portfolio: { before, after, newProject: { id, draftId: project.id, changes } } }),
+  });
+  if (response.status === 401) return sessionExpired();
+  const result = await response.json();
+  if (!response.ok) throw Error(result.error);
+  projects = result.projects;
+  portfolioUndo = { after: before, removeProject: projects.find(item => item.id === id) };
+  draftCase = null;
+  loadProjectOptions(id);
+  selectProject();
+  showReleaseCommit(result.commit);
+  const live = await verifyRelease(id, Object.fromEntries(Object.keys(CaseCopy.fields)
+    .map(field => [field, CaseCopy.read(expected, field)])));
+  if (live) preview.src = `/?editor-preview=1&release=${result.commit}#/work/${encodeURIComponent(id)}`;
+  showReleaseResult(live, false, `/#/work/${encodeURIComponent(id)}`, 'case study');
+}
 
 async function releasePortfolio(undoing) {
   if (releasing || (undoing ? !portfolioUndo || portfolioDirty() : !portfolioDirty())) return;
   const before = Portfolio.order(projects);
-  const createdId = newProject?.id;
   const featured = portfolioList.value === 'featured';
   releasing = true;
   commitLink.hidden = liveLink.hidden = true;
@@ -836,14 +843,6 @@ async function releasePortfolio(undoing) {
   renderPortfolio();
   try {
     const change = undoing ? { before, ...portfolioUndo } : { before, after: lists };
-    if (!undoing && newProject) {
-      if (newFile) {
-        releaseStatus.textContent = 'Uploading hero image…';
-        const { uploadImage } = await import('/editor/image-upload.bundle.js');
-        uploadedHero ??= await uploadImage(newFile.file);
-      }
-      change.newProject = { ...newProject, image: uploadedHero ?? newProject.image };
-    }
     releaseStatus.textContent = 'Publishing to GitHub…';
     const response = await fetch('/api/publish', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -853,13 +852,10 @@ async function releasePortfolio(undoing) {
     const result = await response.json();
     if (!response.ok) throw Error(result.error);
     projects = result.projects;
-    portfolioUndo = undoing ? null : {
-      after: before,
-      ...(createdId ? { removeProject: projects.find(project => project.id === createdId) } : {}),
-    };
+    portfolioUndo = undoing ? null : { after: before };
     portfolioBase = projects;
     resetPortfolioDraft();
-    loadProjectOptions(createdId ?? selected?.id);
+    loadProjectOptions(selected?.id);
     showReleaseCommit(result.commit);
     let live = false;
     const expected = JSON.stringify(Portfolio.order(projects));
@@ -875,8 +871,8 @@ async function releasePortfolio(undoing) {
       }
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
-    const href = createdId ? `/#/work/${encodeURIComponent(createdId)}` : featured ? '/#work' : '/#/work';
-    showReleaseResult(live, undoing, href, createdId ? 'case study' : featured ? 'homepage' : 'portfolio');
+    const href = featured ? '/#work' : '/#/work';
+    showReleaseResult(live, undoing, href, featured ? 'homepage' : 'portfolio');
   } catch (error) {
     if (error.status === 401) return sessionExpired();
     releaseStatus.textContent = error instanceof SyntaxError
