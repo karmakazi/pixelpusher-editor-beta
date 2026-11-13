@@ -30,7 +30,7 @@
         <label for="project">Project</label>
         <select id="project" disabled></select>
         <p class="hint" id="case-hint">Click text or an image in the preview to edit it.</p>
-        <h2 id="selection">Intro</h2>
+        <h2 id="selection">Brand name</h2>
         <div id="copy-controls">
           <p id="status" role="status"></p>
           <div class="original"><h2>Published copy</h2><p id="original"></p></div>
@@ -71,6 +71,11 @@
       <iframe id="preview" title="Pixelpusher case study preview"></iframe>
     </section>
   </main>
+  <dialog id="publish-requirements" aria-labelledby="requirements-heading">
+    <h2 id="requirements-heading">Complete these fields before publishing</h2>
+    <ul id="requirement-list"></ul>
+    <form method="dialog"><button value="ok" autofocus>OK</button></form>
+  </dialog>
   <div class="copy-ai image-tools" id="image-tools" hidden>
       <form id="image-controls" aria-labelledby="image-heading">
         <div class="copy-ai-heading">

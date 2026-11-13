@@ -115,7 +115,7 @@ checkSession('GET').catch(() => {
   sessionStatus.textContent = 'Could not check sign-in. Try signing in.';
 });
 
-let selection = { field: 'tagline', paragraph: null };
+let selection = { field: 'client', paragraph: null };
 let imageSelection = null;
 
 function selectedText(value) {
@@ -152,27 +152,16 @@ function updateDraft(inline = false) {
   const definition = CaseCopy.fields[field];
   const entries = Object.entries(releaseEdits());
   const hasEdits = entries.length > 0 || imageFiles.size > 0;
-  let draftError = '';
-  if (selected === draftCase) {
-    try {
-      Portfolio.newDraft(selected.id, {
-        ...Object.fromEntries([...imageFiles.keys()].map(field => [field, '/img/pending-upload.png'])),
-        ...releaseEdits(),
-      }, 'new-case-study');
-    } catch (error) {
-      draftError = error.message;
-    }
-  }
   const invalid = entries.some(([key, value]) => !validEdit(key, value));
   const rule = paragraph !== null ? '' :
     definition.list ? 'Enter one item per line.' : '';
   document.querySelector('#count').textContent = `${draft.value.length}/${definition.max}`;
   draft.setAttribute('aria-invalid', String(!validEdit(field, edits[field] ?? CaseCopy.read(selected, field))));
-  changeSummary.textContent = draftError || (invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
+  changeSummary.textContent = invalid ? 'Check for empty paragraphs or copy that exceeds the field limit.' :
     [rule, hasEdits ? `Edited: ${[...new Set([...entries.map(([key]) => key), ...imageFiles.keys()])]
-      .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim());
+      .map(key => CaseCopy.definition(key).label).join(', ')}.` : ''].join(' ').trim();
   publish.textContent = suggestion === null ? 'Publish to beta' : 'Publish with AI suggestion';
-  publish.disabled = releasing || pending || checkingImages > 0 || !hasEdits || invalid || Boolean(draftError);
+  publish.disabled = releasing || pending || checkingImages > 0 || !hasEdits;
   undo.disabled = releasing || pending || suggestion !== null || checkingImages > 0 || hasEdits ||
     !matches(selected, lastRelease.get(selected.id)?.changes);
   reset.disabled = releasing || (!hasEdits && suggestion === null && checkingImages === 0);
@@ -290,7 +279,7 @@ function selectProject() {
   previousDrafts.clear();
   suggestion = null;
   aiNote = '';
-  selection = { field: 'tagline', paragraph: null };
+  selection = { field: 'client', paragraph: null };
   imageSelection = null;
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
@@ -612,14 +601,62 @@ function showReleaseResult(live, restored, href, label) {
   liveLink.hidden = false;
 }
 
+const publishRequirements = document.querySelector('#publish-requirements');
+const requirementList = document.querySelector('#requirement-list');
+let nextRequirement;
+
+function checkPublishFields(project, changes) {
+  const invalid = Object.entries(changes).filter(([field, value]) =>
+    !validEdit(field, value) || CaseCopy.normalize(field, value) !== value);
+  const valid = Object.fromEntries(Object.entries(changes).filter(([field]) =>
+    !invalid.some(([badField]) => field === badField)));
+  for (const field of imageFiles.keys()) valid[field] = '/img/pending-upload.png';
+  const missing = project === draftCase ? Portfolio.missingFields(project, CaseCopy.apply(project, valid)) : [];
+  for (const [field, value] of invalid) {
+    if (field === 'copy') {
+      const empty = value.split('\n\n').findIndex(text => !text.trim());
+      const paragraph = empty < 0 && selection.field === 'copy' ? (selection.paragraph ?? 0) : Math.max(0, empty);
+      if (!missing.some(item => item.field === field && item.paragraph === paragraph)) {
+        missing.push({ field, paragraph, label: `Body paragraph ${paragraph + 1}` });
+      }
+    } else if (!missing.some(item => item.field === field)) {
+      missing.push({ field, label: CaseCopy.definition(field).label });
+    }
+  }
+  if (!missing.length) return true;
+  nextRequirement = missing[0];
+  requirementList.replaceChildren(...missing.map(({ label }) => {
+    const item = document.createElement('li');
+    item.textContent = label;
+    return item;
+  }));
+  publishRequirements.returnValue = '';
+  publishRequirements.showModal();
+  return false;
+}
+
+publishRequirements.addEventListener('close', () => {
+  if (publishRequirements.returnValue !== 'ok' || !nextRequirement) return;
+  const { field, paragraph } = nextRequirement;
+  const doc = preview.contentDocument;
+  const imageSlot = /^(hero|gallery:\d+):/.exec(field)?.[1];
+  const target = imageSlot === 'hero' ? doc?.querySelector('.edit-hero-image') :
+    imageSlot ? doc?.querySelector(`[data-edit-image="${imageSlot}"]`) :
+    doc?.querySelector(`[data-copy-field="${field}"]${paragraph === undefined ? '' : `[data-copy-paragraph="${paragraph}"]`}`);
+  if (!target) return;
+  target.scrollIntoView({ block: 'center' });
+  target.focus({ preventScroll: true });
+  if (imageSlot) target.click();
+});
+
 async function release(isUndo) {
   if (releasing || pending || checkingImages > 0 || !selected || (isUndo && suggestion !== null)) return;
   const project = selected;
   const creating = project === draftCase;
   if (creating && (isUndo || publish.disabled)) return;
   const changes = isUndo ? lastRelease.get(project.id)?.previous : releaseEdits();
-  if (!changes || (!Object.keys(changes).length && !imageFiles.size) ||
-      !Object.entries(changes).every(([field, value]) => validEdit(field, value))) return;
+  if (!changes || (!Object.keys(changes).length && !imageFiles.size)) return;
+  if (!isUndo && !checkPublishFields(project, changes)) return;
   releasing = true;
   projectSelect.disabled = draft.disabled = reset.disabled = signOut.disabled = true;
   imageFile.disabled = removeImage.disabled = imageUrl.disabled = imageAlt.disabled = previewImage.disabled = true;

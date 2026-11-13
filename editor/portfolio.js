@@ -46,6 +46,27 @@ const Portfolio = ((CaseCopy) => {
     };
   }
 
+  function missingFields(starter, project) {
+    const missing = [];
+    for (const field of ['client', 'title', 'tagline']) {
+      const value = CaseCopy.read(project, field);
+      if (!CaseCopy.valid(field, value) || value === CaseCopy.read(starter, field)) {
+        missing.push({ field, label: CaseCopy.fields[field].label });
+      }
+    }
+    const original = CaseCopy.read(starter, 'copy').split('\n\n');
+    const paragraphs = CaseCopy.read(project, 'copy').split('\n\n');
+    for (const [paragraph, text] of paragraphs.entries()) {
+      if (!text.trim() || original.includes(text)) {
+        missing.push({ field: 'copy', paragraph, label: `Body paragraph ${paragraph + 1}` });
+      }
+    }
+    if (!project.heroImg || project.heroImg === starter.heroImg) {
+      missing.push({ field: 'hero:url', label: 'Hero image' });
+    }
+    return missing;
+  }
+
   function newDraft(id, changes, finalId) {
     if (!/^draft-[a-f0-9-]{36}$/.test(id) ||
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(finalId) || finalId.length > 100) {
@@ -57,16 +78,8 @@ const Portfolio = ((CaseCopy) => {
           CaseCopy.normalize(field, value) !== value) throw Error('Check the edited case-study fields.');
     }
     const updated = CaseCopy.apply(project, changes);
-    const missing = [];
-    for (const field of ['client', 'title', 'tagline', 'copy']) {
-      const original = CaseCopy.read(project, field);
-      const edited = CaseCopy.read(updated, field);
-      if (edited.split('\n\n').some(value => original.split('\n\n').includes(value))) {
-        missing.push(CaseCopy.fields[field].label.toLowerCase());
-      }
-    }
-    if (!updated.heroImg || updated.heroImg === project.heroImg) missing.push('hero image');
-    if (missing.length) throw Error(`Replace the remaining placeholders before publishing: ${missing.join(', ')}.`);
+    const missing = missingFields(project, updated);
+    if (missing.length) throw Error(`Complete before publishing: ${missing.map(item => item.label).join(', ')}.`);
     if (updated.meta.client === project.meta.client) updated.meta.client = updated.client;
     if (updated.heroAlt === project.heroAlt) delete updated.heroAlt;
     for (const image of updated.gallery) if (image.alt === 'Gallery image placeholder') image.alt = '';
@@ -96,7 +109,7 @@ const Portfolio = ((CaseCopy) => {
     });
   }
 
-  return { order, create, starter, newDraft, arrange };
+  return { order, create, starter, missingFields, newDraft, arrange };
 })(typeof module !== 'undefined' ? require('./case-copy') : CaseCopy);
 
 if (typeof module !== 'undefined') module.exports = Portfolio;

@@ -87,3 +87,16 @@ iframe.mobile { width: min(100%, 390px); }
 .image-tools details { margin-top: 10px; }
 .image-tools summary { cursor: pointer; }
 .image-tools #chosen-image { overflow-wrap: anywhere; }
+
+#publish-requirements {
+  width: min(420px, calc(100% - 32px));
+  padding: 1.5rem;
+  border: 1px solid #626455;
+  border-radius: 9px;
+  background: #1b1c18;
+  color: #f6f5ef;
+}
+#publish-requirements::backdrop { background: #0009; }
+#requirements-heading { margin: 0; font-size: 1.1rem; }
+#requirement-list { padding-left: 1.3rem; line-height: 1.6; }
+#publish-requirements form { display: flex; justify-content: flex-end; }
