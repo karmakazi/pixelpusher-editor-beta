@@ -1,45 +1,5 @@
 [
   {
-    "id": "get-on-your-bike",
-    "client": "SPOKE &amp; SPROCKET",
-    "title": "GET ON YOUR BIKE",
-    "tagline": "I want to ride my bicycle",
-    "pullQuote": "Wheels on the bike go round and round",
-    "copy": [
-      "Booking a tune-up at Spoke &amp; Sprocket meant calling during shop hours. Riders wanted to know what a repair might cost and when they could bring their bike in, while mechanics wanted fewer interruptions. Most riders could describe the problem, but they didn’t know which service to book. Squeaky brakes, for example, might need a simple adjustment or a new set of pads.Describe the brief and what your team set out to achieve.",
-      "The redesigned website lets riders pick a common issue, describe it in their own words, or book a general tune-up. Each service page shows a starting price and explains what the mechanic will check. Riders can book a drop-off after hours and get a confirmation that explains what to bring and when they’ll hear back. The shop reviews their notes before the bike arrives and confirms the estimate after an inspection."
-    ],
-    "meta": {
-      "client": "SPOKE &amp; SPROCKET",
-      "agency": "",
-      "services": [],
-      "industry": ""
-    },
-    "heroImg": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/425e3208-0d55-4bb4-94bf-294ff94b0e3b-HWyxJV76c4fmX1XbMtWPC0ZFa5qIzW.png",
-    "gallery": [
-      {
-        "wide": false,
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/bc81f3e0-db7a-4e43-be98-e680577fc2f9-sQ1eovwBdJMrEHV7pR7YawxYm7o1k1.png",
-        "alt": ""
-      },
-      {
-        "wide": false,
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/713134ad-86ac-40a1-83a5-0c759343628e-N5Fx604rCT0GFISjVPhdMYWjkaAubN.png",
-        "alt": ""
-      },
-      {
-        "wide": true,
-        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/716b10d6-288b-4514-b242-4c927d622faa-Umnx3U398oNLVOl2yjAQtnXDRK5r63.png",
-        "alt": ""
-      }
-    ],
-    "comingSoon": false,
-    "titleLines": [
-      "GET ON YOUR BIKE"
-    ],
-    "videoId": "https://vimeo.com/1217666625/dfce6ecff5"
-  },
-  {
     "id": "colgate-totally-honest",
     "client": "Colgate",
     "title": "TOTALLY HONEST",
