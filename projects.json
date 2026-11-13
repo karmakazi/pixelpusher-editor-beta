@@ -390,12 +390,12 @@
     "vimeoId": "172495245",
     "thumbSeed": "gatorade-pp",
     "heroSeed": "gatorade-hero",
-    "heroImg": "img/gatorade-hero.png",
+    "heroImg": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/33d3c3b7-f882-4621-abca-a2406f8b3a60-c3dVlKlsqe336Nd9XwUlORBFoSouw4.jpg",
     "tagline": "Free Gatorade. But you have to earn it.",
     "pullQuote": "The machine knows if you’ve worked for it. Your heart rate doesn’t lie.",
     "copy": [
-      "TBWA Toronto came to us with the best kind of brief: make people prove they deserve a free Gatorade. We built a custom vending machine equipped with a pulse sensor that measured the user’s heart rate on contact. Heart rate over 120 BPM — clear evidence of real effort — and the machine dispensed a free bottle. Anything less, nothing.",
-      "The Sweat Machine turned a product sample into a challenge, and people rose to it. Crowds gathered. People did jumping jacks, sprinted in place, and egged each other on. The video spread fast — because it was exactly what the brand stands for, made physical and immediate."
+      "TBWA Toronto came to us with the best kind of brief: make people prove they deserve a free Gatorade. We built a custom vending machine equipped with a pulse sensor that measured the user’s heart rate on contact. When a heart rate topped 120 BPM, clear evidence of real effort, the machine dispensed a free bottle. Anything less, nothing.",
+      "The Sweat Machine turned a product sample into a challenge, and people rose to it. Crowds gathered. People did jumping jacks, sprinted in place, and egged each other on. The video spread fast because it was exactly what the brand stands for, made physical and immediate."
     ],
     "gallery": [
       {
@@ -406,17 +406,20 @@
       {
         "wide": false,
         "seed": "gatorade-a",
-        "alt": "Pulse sensor detail"
+        "alt": "Crowd at city hall",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/340dc059-2738-4ecf-841d-cb9f1b4131ba-h79Rl4lZh0MMl88Y8FkvBERQxlHbpX.jpg"
       },
       {
         "wide": false,
         "seed": "gatorade-b",
-        "alt": "Crowd reaction"
+        "alt": "Using the vending machine",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/62c2c094-dfe2-4f8a-8f10-5cb3e7d568d6-0IPTD3OJVtln34EZ4NuhHUfJDDakm2.jpg"
       },
       {
         "wide": true,
         "seed": "gatorade-wide2",
-        "alt": "Activation in action"
+        "alt": "Activation in action",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/0d0b9a10-c8de-4342-88f1-10f6c14bbc61-UAUqHFsy1KXRzdMAWnkgIkk4whAQOk.jpg"
       }
     ],
     "meta": {
