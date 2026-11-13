@@ -57,14 +57,16 @@ const Portfolio = ((CaseCopy) => {
           CaseCopy.normalize(field, value) !== value) throw Error('Check the edited case-study fields.');
     }
     const updated = CaseCopy.apply(project, changes);
+    const missing = [];
     for (const field of ['client', 'title', 'tagline', 'copy']) {
       const original = CaseCopy.read(project, field);
       const edited = CaseCopy.read(updated, field);
       if (edited.split('\n\n').some(value => original.split('\n\n').includes(value))) {
-        throw Error('Replace the placeholder brand, title, intro and body copy before publishing.');
+        missing.push(CaseCopy.fields[field].label.toLowerCase());
       }
     }
-    if (!updated.heroImg || updated.heroImg === project.heroImg) throw Error('Replace the placeholder hero image before publishing.');
+    if (!updated.heroImg || updated.heroImg === project.heroImg) missing.push('hero image');
+    if (missing.length) throw Error(`Replace the remaining placeholders before publishing: ${missing.join(', ')}.`);
     if (updated.meta.client === project.meta.client) updated.meta.client = updated.client;
     if (updated.heroAlt === project.heroAlt) delete updated.heroAlt;
     for (const image of updated.gallery) if (image.alt === 'Gallery image placeholder') image.alt = '';
