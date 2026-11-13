@@ -67,6 +67,7 @@ module.exports = async function publish(req, res) {
     const projects = JSON.parse(source);
     let updated;
     let message;
+    let restoreProject;
     if (homepage) {
       const allowed = HomeContent.fields(projects);
       if (!baseline || !entries.length || !entries.every(([field, value]) =>
@@ -80,14 +81,34 @@ module.exports = async function publish(req, res) {
       updated = JSON.stringify(HomeContent.apply(projects, changes), null, 2) + '\n';
       message = undo === true ? 'Restore homepage content' : 'Update homepage content';
     } else if (portfolio) {
-      const { before, after, newProject, removeProject } = portfolio;
+      const { before, after, newProject, removeProject, restoreProject: restore } = portfolio;
       const current = Portfolio.order(projects);
       if (JSON.stringify(current.work) !== JSON.stringify(before?.work) ||
           JSON.stringify(current.featured) !== JSON.stringify(before?.featured)) {
         return res.status(409).json({ error: 'The project order changed in GitHub. Reload after the latest deployment.' });
       }
       try {
+        if ([newProject, removeProject, restore].filter(Boolean).length > 1) {
+          throw Error('Choose one case-study change per publish.');
+        }
         let candidates = projects;
+        if (restore) {
+          if (typeof restore.id !== 'string' || !/^[a-f0-9]{40}$/.test(restore.sha)) {
+            throw Error('The case study restoration details are invalid.');
+          }
+          if (projects.some(project => project.id === restore.id)) {
+            return res.status(409).json({ error: 'This case study URL already exists.' });
+          }
+          const archived = await fetch(`https://api.github.com/repos/${repo}/git/blobs/${restore.sha}`, {
+            headers, signal: AbortSignal.timeout(8000),
+          });
+          if (!archived.ok) return res.status(502).json({ error: 'Could not read the previous case study from GitHub.' });
+          const blob = await archived.json();
+          const previousProjects = JSON.parse(Buffer.from(blob.content, 'base64').toString('utf8'));
+          const restored = Array.isArray(previousProjects) && previousProjects.find(project => project.id === restore.id);
+          if (!restored) throw Error('The case study could not be found in the previous version.');
+          candidates = [...projects, restored];
+        }
         if (newProject) {
           const created = newProject.draftId
             ? Portfolio.newDraft(newProject.draftId, newProject.changes, newProject.id)
@@ -98,13 +119,15 @@ module.exports = async function publish(req, res) {
         if (removeProject) {
           const existing = projects.find(project => project.id === removeProject.id);
           if (!existing || JSON.stringify(existing) !== JSON.stringify(removeProject)) {
-            return res.status(409).json({ error: 'The new case study has since changed. It cannot be removed by this undo.' });
+            return res.status(409).json({ error: 'The case study changed in GitHub. Reload before removing it.' });
           }
           candidates = projects.filter(project => project !== existing);
+          restoreProject = { id: existing.id, sha: file.sha };
         }
         updated = JSON.stringify(Portfolio.arrange(candidates, after), null, 2) + '\n';
         message = newProject ? `Add case study: ${newProject.id}` :
-          removeProject ? `Undo new case study: ${removeProject.id}` : 'Update portfolio order';
+          removeProject ? `Remove case study: ${removeProject.id}` :
+          restore ? `Restore case study: ${restore.id}` : 'Update portfolio order';
       } catch (error) {
         return res.status(400).json({ error: error.message });
       }
@@ -135,7 +158,7 @@ module.exports = async function publish(req, res) {
       return res.status(502).json({ error: 'GitHub rejected the change. Check the token’s Contents write access and the main branch rules.' });
     }
     const result = await saved.json();
-    return res.status(200).json({ commit: result.commit.sha, ...(portfolio ? { projects: JSON.parse(updated) } : {}) });
+    return res.status(200).json({ commit: result.commit.sha, ...(portfolio ? { projects: JSON.parse(updated), restoreProject } : {}) });
   } catch {
     return res.status(502).json({ error: 'Could not confirm the GitHub commit. Check the beta repo before retrying.' });
   }

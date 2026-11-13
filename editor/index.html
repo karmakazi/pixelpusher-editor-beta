@@ -32,19 +32,21 @@
         <label for="project">Project</label>
         <select id="project" disabled></select>
         <p class="hint" id="case-hint">Click text or an image in the preview to edit it.</p>
-        <h2 id="selection">Brand name</h2>
-        <div id="copy-controls">
-          <p id="status" role="status"></p>
-          <div class="original"><h2>Published copy</h2><p id="original"></p></div>
-          <label for="draft">Draft copy <small id="count"></small></label>
-          <textarea id="draft" rows="4" disabled></textarea>
-          <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
-        </div>
-        <p id="changes" role="status"></p>
-        <div class="actions">
-          <button id="publish" disabled>Publish to beta</button>
-          <button class="secondary" id="undo" disabled>Undo publish</button>
-          <button class="secondary" id="reset" disabled>Reset all edits</button>
+        <div id="case-fields">
+          <h2 id="selection">Brand name</h2>
+          <div id="copy-controls">
+            <p id="status" role="status"></p>
+            <div class="original"><h2>Published copy</h2><p id="original"></p></div>
+            <label for="draft">Draft copy <small id="count"></small></label>
+            <textarea id="draft" rows="4" disabled></textarea>
+            <button class="secondary" id="restore-draft" type="button" hidden>Restore previous draft</button>
+          </div>
+          <p id="changes" role="status"></p>
+          <div class="actions">
+            <button id="publish" disabled>Publish to beta</button>
+            <button class="secondary" id="undo" disabled>Undo publish</button>
+            <button class="secondary" id="reset" disabled>Reset all edits</button>
+          </div>
         </div>
       </div>
       <section id="home-controls" hidden aria-label="Edit homepage">

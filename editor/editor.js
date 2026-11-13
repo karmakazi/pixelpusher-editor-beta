@@ -289,6 +289,14 @@ function selectProject() {
   imageSelection = null;
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
+  const hasProject = Boolean(selected);
+  document.querySelector('#case-fields').hidden = !hasProject;
+  projectSelect.disabled = !hasProject;
+  if (!hasProject) {
+    caseHint.textContent = 'No case studies available. Create a new case study to get started.';
+    preview.src = '/?editor-preview=1#/work';
+    return;
+  }
   preview.src = `/?editor-preview=1&view=${revision}${selected === draftCase ? `&draft-case=${selected.id}` : ''}#/work/${encodeURIComponent(selected.id)}`;
   showField();
 }
@@ -296,7 +304,7 @@ function selectProject() {
 newCaseButton.onclick = () => {
   if (releasing || pending || checkingImages) return;
   if (draftCase) return;
-  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+  if (((draftCase && selected === draftCase) || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
       !window.confirm('Discard unpublished edits to this case study?')) return;
   draftCase = Portfolio.starter(`draft-${crypto.randomUUID()}`);
   loadProjectOptions(draftCase.id);
@@ -550,11 +558,11 @@ preview.addEventListener('load', () => {
   if (selected) updateDraft();
 });
 projectSelect.addEventListener('change', () => {
-  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
-    projectSelect.value = selected.id;
+  if (((draftCase && selected === draftCase) || Object.keys(edits).length || imageFiles.size || suggestion !== null) && !window.confirm('Discard unpublished edits to this case study?')) {
+    projectSelect.value = selected?.id ?? '';
     return;
   }
-  if (selected === draftCase && projectSelect.value !== draftCase.id) {
+  if (draftCase && selected === draftCase && projectSelect.value !== draftCase.id) {
     const next = projectSelect.value;
     draftCase = null;
     loadProjectOptions(next);
@@ -802,7 +810,6 @@ fetch('/projects.json')
     for (const project of projects.filter(item => !item.comingSoon)) {
       projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
-    if (!projectSelect.options.length) throw new Error('No case studies available.');
     projectSelect.disabled = openPortfolio.disabled = newCaseButton.disabled = openHome.disabled = false;
     selectProject();
   })
@@ -823,9 +830,11 @@ let portfolioUndo;
 let portfolioView;
 let portfolioBase;
 let selectedCard;
+let removedProject;
 
 function resetPortfolioDraft() {
   selectedCard = null;
+  removedProject = null;
   lists = Portfolio.order(projects);
   portfolioView = portfolioList.value;
 }
@@ -833,7 +842,7 @@ function resetPortfolioDraft() {
 function previewPortfolio() {
   if (portfolioControls.hidden) return;
   preview.contentWindow?.postMessage({
-    type: 'pixelpusher-portfolio-preview', lists, view: portfolioView, base: portfolioBase, selectedCard, locked: releasing,
+    type: 'pixelpusher-portfolio-preview', lists, view: portfolioView, base: portfolioBase, selectedCard, locked: releasing, removedId: removedProject?.id,
   }, location.origin);
 }
 
@@ -844,7 +853,7 @@ function portfolioDirty() {
 function renderPortfolio() {
   const key = portfolioList.value;
   const ids = lists[key];
-  const candidates = projects;
+  const candidates = projects.filter(project => project !== removedProject);
   portfolioOptions.replaceChildren();
   if (key === 'featured') {
     const add = document.createElement('select');
@@ -862,6 +871,10 @@ function renderPortfolio() {
     };
     portfolioOptions.append(add);
   }
+  publishPortfolio.textContent = removedProject ? 'Publish removal' : 'Publish portfolio';
+  portfolioStatus.textContent = removedProject
+    ? `${CaseCopy.read(removedProject, 'title').replaceAll('\n', ' ')} will be removed when you publish.`
+    : '';
   publishPortfolio.disabled = releasing || !portfolioDirty();
   undoPortfolio.disabled = releasing || portfolioDirty() || !portfolioUndo;
   resetPortfolio.disabled = releasing || !portfolioDirty();
@@ -879,8 +892,8 @@ function loadProjectOptions(preferred) {
 }
 
 openPortfolio.onclick = () => {
-  if (releasing || pending || checkingImages || !selected) return;
-  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+  if (releasing || pending || checkingImages) return;
+  if (((draftCase && selected === draftCase) || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
       !window.confirm('Discard unpublished edits to this case study?')) return;
   revision++;
   edits = {};
@@ -892,7 +905,7 @@ openPortfolio.onclick = () => {
   positionImageTools();
   releaseStatus.textContent = '';
   commitLink.hidden = liveLink.hidden = true;
-  if (selected === draftCase) {
+  if (draftCase && selected === draftCase) {
     draftCase = null;
     loadProjectOptions();
     selected = projects.find(project => project.id === projectSelect.value);
@@ -957,7 +970,9 @@ async function releasePortfolio(undoing) {
   releaseStatus.textContent = undoing ? 'Restoring the previous version…' : 'Publishing to GitHub…';
   renderPortfolio();
   try {
-    const change = undoing ? { before, ...portfolioUndo } : { before, after: lists };
+    const change = undoing ? { before, ...portfolioUndo } : {
+      before, after: lists, removeProject: removedProject || undefined,
+    };
     releaseStatus.textContent = 'Publishing to GitHub…';
     const response = await fetch('/api/publish', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -967,10 +982,11 @@ async function releasePortfolio(undoing) {
     const result = await response.json();
     if (!response.ok) throw Error(result.error);
     projects = result.projects;
-    portfolioUndo = undoing ? null : { after: before };
+    portfolioUndo = undoing ? null : { after: before, restoreProject: result.restoreProject };
     portfolioBase = projects;
     resetPortfolioDraft();
     loadProjectOptions(selected?.id);
+    renderPortfolio();
     showReleaseCommit(result.commit);
     let live = false;
     const expected = JSON.stringify(Portfolio.order(projects));
@@ -1014,7 +1030,20 @@ window.addEventListener('message', event => {
   if (action === 'select') {
     selectedCard = id;
   } else if (id === selectedCard) {
-    if (action === 'remove' && portfolioView === 'featured') {
+    if (action === 'delete' && portfolioView === 'work') {
+      if (removedProject) {
+        portfolioStatus.textContent = 'Publish or reset the staged removal first.';
+        return;
+      }
+      const project = projects.find(item => item.id === id);
+      if (!project) return;
+      const title = CaseCopy.read(project, 'title').replaceAll('\n', ' ');
+      if (!window.confirm(`Remove “${title}” from the site when you publish? Its case study link will return to All Projects.`)) return;
+      removedProject = project;
+      lists.work = lists.work.filter(item => item !== id);
+      lists.featured = lists.featured.filter(item => item !== id);
+      selectedCard = null;
+    } else if (action === 'remove' && portfolioView === 'featured') {
       ids.splice(index, 1);
       selectedCard = null;
     } else if (action === 'up' || action === 'down') {
@@ -1086,10 +1115,10 @@ async function loadHome() {
 }
 
 openHome.onclick = async () => {
-  if (releasing || pending || checkingImages || !selected) return;
+  if (releasing || pending || checkingImages) return;
   const openingProject = selected;
   const openingRevision = revision;
-  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+  if (((draftCase && selected === draftCase) || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
       !window.confirm('Discard unpublished edits to this case study?')) return;
   openHome.disabled = true;
   try {

@@ -2,6 +2,7 @@
 
 // ── STATE ──────────────────────────────────────────────────
 let PROJECTS = [];
+let projectsLoaded = false;
 let home;
 let homeLocked = false;
 let homeFields;
@@ -25,7 +26,7 @@ if (editorPreview) {
       const { content, inline, locked, field } = event.data;
       home = content;
       homeLocked = locked;
-      if (!inline && PROJECTS.length) {
+      if (!inline && projectsLoaded) {
         const node = field && [...document.querySelectorAll('[data-home-field]')].find(item => item.dataset.homeField === field);
         if (node) node.innerHTML = homeText(field, false);
         else renderHome(true);
@@ -36,11 +37,11 @@ if (editorPreview) {
       return;
     }
     if (event.data?.type === 'pixelpusher-portfolio-preview') {
-      const { lists, newProject, view, base, selectedCard, locked } = event.data;
+      const { lists, newProject, view, base, selectedCard, locked, removedId } = event.data;
       if (!['work', 'featured', 'new'].includes(view)) return;
       try {
         const created = newProject ? Portfolio.create(newProject, location.origin) : null;
-        const projects = Array.isArray(base) ? base : PROJECTS;
+        const projects = (Array.isArray(base) ? base : PROJECTS).filter(project => project.id !== removedId);
         portfolioPreview = Portfolio.arrange(created ? [...projects, created] : projects, lists);
         portfolioPreviewView = view;
         portfolioSelectedCard = selectedCard;
@@ -353,7 +354,7 @@ window.addEventListener('hashchange', route);
 window.addEventListener('resize', () => { if (currentView && currentView.startsWith('case')) fitTitle(); });
 
 function route() {
-  if (!PROJECTS.length && !(editorPreview && draftCaseId)) return;
+  if (!projectsLoaded && !(editorPreview && draftCaseId)) return;
 
   const hash = location.hash;
 
@@ -427,7 +428,7 @@ function workCard(p, wide, eager, delay, slot) {
     ${picked ? `<div class="portfolio-arrows">
       <button type="button" data-portfolio-action="up" aria-label="Move ${p.title} up"${portfolioLocked || slot.first ? ' disabled' : ''}>↑</button>
       <button type="button" data-portfolio-action="down" aria-label="Move ${p.title} down"${portfolioLocked || slot.last ? ' disabled' : ''}>↓</button>
-      ${slot.featured ? `<button type="button" data-portfolio-action="remove"${portfolioLocked ? ' disabled' : ''}>Remove from homepage</button>` : ''}
+      ${slot.featured ? `<button type="button" data-portfolio-action="remove"${portfolioLocked ? ' disabled' : ''}>Remove from homepage</button>` : `<button type="button" data-portfolio-action="delete"${portfolioLocked ? ' disabled' : ''}>Remove case study</button>`}
     </div>` : ''}` : '';
 
   return `
@@ -977,6 +978,7 @@ fetch('projects.json')
   .then(r => r.json())
   .then(data => {
     PROJECTS = data;
+    projectsLoaded = true;
     if (!portfolioPreview) route();
     if (homeEditing()) sendHomeReady();
   })
