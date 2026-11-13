@@ -205,20 +205,23 @@ function positionImageTools() {
   imageTools.hidden = !anchor || releasing;
   if (imageTools.hidden) return;
   const rect = anchor.getBoundingClientRect();
-  imageTools.hidden = rect.bottom < 0 || rect.top > viewport.innerHeight;
+  const frame = preview.getBoundingClientRect();
+  const topEdge = Math.max(8, frame.top);
+  const bottomEdge = Math.min(window.innerHeight - 8, frame.bottom);
+  imageTools.hidden = rect.bottom < 0 || rect.top > viewport.innerHeight || bottomEdge <= topEdge;
   if (imageTools.hidden) return;
-  const docked = viewport.innerWidth < 520;
+
+  const docked = frame.width < 520;
   imageTools.classList.toggle('copy-ai-docked', docked);
-  if (docked) {
-    imageTools.style.removeProperty('left');
-    imageTools.style.removeProperty('top');
-    return;
-  }
+  imageTools.style.maxHeight = `${bottomEdge - topEdge}px`;
+  imageTools.style.width = docked ? `${Math.max(0, frame.width - 24)}px` : '';
   const { width, height } = imageTools.getBoundingClientRect();
-  imageTools.style.left = `${Math.max(12, Math.min(rect.left, viewport.innerWidth - width - 12))}px`;
-  const below = rect.bottom + 8;
-  const top = below + height <= viewport.innerHeight - 8 ? below : rect.top - height - 8;
-  imageTools.style.top = `${Math.max(8, Math.min(top, viewport.innerHeight - height - 8))}px`;
+  const left = docked ? frame.left + 12 : Math.min(frame.left + rect.left, frame.right - width - 12);
+  const below = frame.top + rect.bottom + 8;
+  const top = docked ? bottomEdge - height : below + height <= bottomEdge
+    ? below : frame.top + rect.top - height - 8;
+  imageTools.style.left = `${Math.max(8, left)}px`;
+  imageTools.style.top = `${Math.max(topEdge, Math.min(top, bottomEdge - height))}px`;
 }
 
 function closeImageTools(event) {
@@ -240,6 +243,9 @@ imageTools.addEventListener('keydown', event => {
 });
 const imageToolsResize = new ResizeObserver(positionImageTools);
 imageToolsResize.observe(imageControls);
+imageToolsResize.observe(preview);
+window.addEventListener('scroll', positionImageTools, { passive: true });
+window.addEventListener('resize', positionImageTools);
 
 function showField() {
   copyControls.hidden = Boolean(imageSelection) || selected === draftCase;
@@ -413,6 +419,7 @@ imageFile.addEventListener('change', async () => {
   }
   const key = `${imageSelection}:url`;
   const requestedRevision = ++revision;
+  imageStatus.textContent = 'Preparing image…';
   const previewUrl = URL.createObjectURL(file);
   let staged = false;
   checkingImages++;
@@ -491,7 +498,7 @@ imageUrl.addEventListener('input', () => { revision++; });
 preview.addEventListener('load', () => {
   const doc = preview.contentDocument;
   if (!doc?.body?.classList.contains('editor-preview')) return;
-  doc.body.append(imageTools);
+
   preview.contentWindow.addEventListener('scroll', positionImageTools, { passive: true });
   preview.contentWindow.addEventListener('resize', positionImageTools);
   positionImageTools();

@@ -1020,29 +1020,7 @@ footer a:hover { color: var(--off-white); }
   font: 650 14px/1.4 system-ui, sans-serif;
 }
 
-.image-tools {
-  max-height: calc(100dvh - 16px);
-  overflow: auto;
-  color-scheme: dark;
-}
-.image-tools label {
-  display: block;
-  margin: 10px 0 4px;
-}
-.image-tools input {
-  width: 100%;
-  padding: 6px;
-  border: 1px solid #777;
-  border-radius: 4px;
-  background: #111;
-  color: inherit;
-  font: inherit;
-}
-.editor-preview .image-tools input[type="text"] { cursor: text !important; }
-.image-tools .hint { margin: 6px 0; color: #cecec4; }
-.image-tools details { margin-top: 10px; }
-.image-tools details button { margin-top: 6px; }
-.image-tools #chosen-image { overflow-wrap: anywhere; }
+
 
 .portfolio-select {
   position: absolute;
@@ -1074,7 +1052,6 @@ footer a:hover { color: var(--off-white); }
 .editor-preview .portfolio-select,
 .editor-preview .portfolio-arrows button:not(:disabled) { cursor: pointer !important; }
 
-.editor-preview .image-tools { z-index: 1001; }
 .case-video-editor {
   padding: 1rem var(--gutter);
   background: var(--black);

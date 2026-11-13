@@ -46,3 +46,44 @@ iframe.mobile { width: min(100%, 390px); }
 #portfolio-status { font-size: .85rem; line-height: 1.5; }
 
 #portfolio-options button { margin-top: .55rem; }
+.image-tools {
+  position: fixed;
+  z-index: 10;
+  width: min(320px, calc(100vw - 24px));
+  overflow: auto;
+  background: #1b1c18;
+  border: 1px solid #626455;
+  border-radius: 9px;
+  box-shadow: 0 6px 24px #0009;
+  padding: 12px;
+}
+.image-tools .copy-ai-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.image-tools [data-close] {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border-color: #777;
+  color: inherit;
+}
+.image-tools [data-close]::before,
+.image-tools [data-close]::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+}
+.image-tools [data-close]::before { transform: rotate(45deg); }
+.image-tools [data-close]::after { transform: rotate(-45deg); }
+.image-tools .hint, #image-status { font-size: .82rem; }
+.image-tools details { margin-top: 10px; }
+.image-tools summary { cursor: pointer; }
+.image-tools #chosen-image { overflow-wrap: anywhere; }
