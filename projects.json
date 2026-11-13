@@ -4,7 +4,7 @@
     "client": "SPOKE &amp; SPROCKET",
     "title": "GET ON YOUR BIKE",
     "tagline": "I want to ride my bicycle",
-    "pullQuote": "",
+    "pullQuote": "Wheels on the bike go round and round",
     "copy": [
       "Booking a tune-up at Spoke &amp; Sprocket meant calling during shop hours. Riders wanted to know what a repair might cost and when they could bring their bike in, while mechanics wanted fewer interruptions. Most riders could describe the problem, but they didn’t know which service to book. Squeaky brakes, for example, might need a simple adjustment or a new set of pads.Describe the brief and what your team set out to achieve.",
       "The redesigned website lets riders pick a common issue, describe it in their own words, or book a general tune-up. Each service page shows a starting price and explains what the mechanic will check. Riders can book a drop-off after hours and get a confirmation that explains what to bring and when they’ll hear back. The shop reviews their notes before the bike arrives and confirms the estimate after an inspection."
@@ -36,7 +36,8 @@
     "comingSoon": false,
     "titleLines": [
       "GET ON YOUR BIKE"
-    ]
+    ],
+    "videoId": "1217666625"
   },
   {
     "id": "colgate-totally-honest",
