@@ -77,22 +77,9 @@ if (editorPreview) {
     const image = event.target.closest('[data-edit-image]');
     if (image) selectPreviewImage(image);
   });
-  document.addEventListener('submit', event => {
-    const form = event.target.closest('.case-video-form');
-    if (!form) return;
-    event.preventDefault();
-    const value = form.querySelector('input').value.trim();
-    const id = /^\d{1,15}$/.test(value) ? value :
-      /^https:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d{1,15})\/?(?:[?#].*)?$/.exec(value)?.[1];
-    if (!id) {
-      form.querySelector('[role="status"]').textContent = 'Enter a public Vimeo link or numeric video ID.';
-      return;
-    }
-    sendVideoEdit(id);
-  });
-
   document.addEventListener('click', event => {
-    if (event.target.closest('[data-remove-video]')) sendVideoEdit('');
+    if (!event.target.closest('[data-video-options]') || casePreview?.locked) return;
+    window.parent.postMessage({ type: 'pixelpusher-video-options', projectId: currentView.slice(5) }, location.origin);
   });
   document.addEventListener('keydown', event => {
     const image = event.target.closest('[data-edit-image]');
@@ -101,11 +88,6 @@ if (editorPreview) {
       selectPreviewImage(image);
     }
   });
-}
-
-function sendVideoEdit(value) {
-  if (casePreview?.locked) return;
-  window.parent.postMessage({ type: 'pixelpusher-video-edit', projectId: currentView.slice(5), value }, location.origin);
 }
 
 function selectPreviewImage(image) {
@@ -920,16 +902,9 @@ function renderCase(id, preserveScroll = false) {
     </section>
 
     ${editorPreview && !portfolioPreview ? `
-      <details class="case-video-editor">
-        <summary>${CaseCopy.read(p, 'video') ? 'Edit video' : 'Add video'}</summary>
-        <form class="case-video-form">
-          <label for="case-video-url">Vimeo URL or video ID</label>
-          <input id="case-video-url" maxlength="300" value="${CaseCopy.escape(CaseCopy.read(p, 'video'))}">
-          <button type="submit">Preview video</button>
-          ${CaseCopy.read(p, 'video') ? '<button type="button" data-remove-video>Remove video</button>' : ''}
-          <p role="status"></p>
-        </form>
-      </details>` : ''}
+      <div class="case-video-editor">
+        <button type="button" data-video-options aria-haspopup="dialog">${CaseCopy.read(p, 'video') ? 'Edit video' : 'Add video'}</button>
+      </div>` : ''}
     ${p.videoId || (editorPreview && p.videoId === undefined && p.vimeoId)
       ? videoBlock(CaseCopy.read(p, 'video')) : ''}
 
@@ -952,11 +927,16 @@ function renderCase(id, preserveScroll = false) {
 // ── VIDEO BLOCKS ──────────────────────────────────────────
 function initVideoBlocks() {
   document.querySelectorAll('.case-gallery-video').forEach(block => {
-    const id = block.dataset.vimeo;
+    const urls = CaseCopy.videoUrls(block.dataset.vimeo);
+    if (!urls) return;
+    const player = new URL(urls.player);
+    for (const [key, value] of Object.entries({ autoplay: '1', title: '0', byline: '0', portrait: '0' })) {
+      player.searchParams.set(key, value);
+    }
     const thumb = block.querySelector('.video-thumb');
 
     // Fetch thumbnail via Vimeo oEmbed
-    fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${id}`)
+    fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(urls.watch)}`)
       .then(r => r.json())
       .then(data => {
         if (data.thumbnail_url && thumb) {
@@ -971,7 +951,7 @@ function initVideoBlocks() {
 
     // Click to swap in the live player
     block.addEventListener('click', () => {
-      block.innerHTML = `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      block.innerHTML = `<iframe src="${CaseCopy.escape(player.href)}" title="Case study video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
       block.classList.add('playing');
       // Hide cursor immediately — iframe steals all mouse events from here
       document.getElementById('cur').style.opacity = '0';

@@ -18,6 +18,12 @@ const imageUrl = document.querySelector('#image-url');
 const imageAlt = document.querySelector('#image-alt');
 const imageStatus = document.querySelector('#image-status');
 const previewImage = document.querySelector('#preview-image');
+const videoTools = document.querySelector('#video-tools');
+const videoControls = document.querySelector('#video-controls');
+const videoUrl = document.querySelector('#video-url');
+const videoStatus = document.querySelector('#video-status');
+const videoPlayer = document.querySelector('#video-player');
+const removeVideo = document.querySelector('#remove-video');
 const original = document.querySelector('#original');
 const draft = document.querySelector('#draft');
 const access = document.querySelector('#access');
@@ -328,12 +334,11 @@ window.addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing) return;
   const { type, projectId, field, paragraph, value, image } = event.data || {};
   if (projectId !== selected.id) return;
-  if (type === 'pixelpusher-video-edit') {
-    if (CaseCopy.valid('video', value)) {
-      revision++;
-      stageField('video', value);
-      updateDraft();
-    }
+  if (type === 'pixelpusher-video-options') {
+    videoUrl.value = edits.video ?? CaseCopy.read(selected, 'video');
+    videoStatus.textContent = '';
+    showVideoPlayer(videoUrl.value);
+    if (!videoTools.open) videoTools.showModal();
     return;
   }
   if (type === 'pixelpusher-image-select') {
@@ -380,6 +385,47 @@ window.addEventListener('message', event => {
     draft.value = value;
     editField(true);
   }
+});
+
+function showVideoPlayer(value) {
+  const urls = CaseCopy.videoUrls(value);
+  removeVideo.hidden = !value;
+  videoPlayer.hidden = !urls;
+  if (urls) {
+    if (videoPlayer.src !== urls.player) videoPlayer.src = urls.player;
+  } else {
+    videoPlayer.removeAttribute('src');
+  }
+}
+
+videoControls.addEventListener('submit', event => {
+  event.preventDefault();
+  const value = CaseCopy.normalizeVideo(videoUrl.value);
+  if (!value) {
+    videoStatus.textContent = 'Enter a Vimeo link or numeric video ID. For an unlisted video, paste the full share link.';
+    return;
+  }
+  revision++;
+  stageField('video', value);
+  updateDraft();
+  showVideoPlayer(value);
+  videoStatus.textContent = /^\d+$/.test(value) ? 'For an unlisted video, use the full share link.' : '';
+});
+
+removeVideo.addEventListener('click', () => {
+  revision++;
+  stageField('video', '');
+  updateDraft();
+  videoUrl.value = '';
+  videoStatus.textContent = 'Video removed from the draft.';
+  showVideoPlayer('');
+  videoUrl.focus();
+});
+
+document.querySelector('#close-video').addEventListener('click', () => videoTools.close());
+videoTools.addEventListener('close', () => {
+  videoPlayer.removeAttribute('src');
+  preview.contentDocument?.querySelector('[data-video-options]')?.focus({ preventScroll: true });
 });
 
 function removeFile(key) {

@@ -1053,19 +1053,16 @@ footer a:hover { color: var(--off-white); }
 .editor-preview .portfolio-arrows button:not(:disabled) { cursor: pointer !important; }
 
 .case-video-editor {
-  padding: 1rem var(--gutter);
-  background: var(--black);
-  color: white;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem var(--gutter);
 }
-.case-video-editor summary,
-.case-video-form button { cursor: pointer !important; }
-.case-video-form { margin-top: .75rem; }
-.case-video-form label { display: block; margin-bottom: .35rem; }
-.case-video-form input,
-.case-video-form button {
-  padding: .5rem;
-  border: 1px solid #777;
-  border-radius: 4px;
-  font: inherit;
+.case-video-editor button {
+  padding: .65rem 1rem;
+  border: 1px solid #626455;
+  border-radius: 6px;
+  background: #d9f36c;
+  color: #171a0b;
+  font: 650 13px system-ui, sans-serif;
+  cursor: pointer !important;
 }
-.editor-preview .case-video-form input { cursor: text !important; }

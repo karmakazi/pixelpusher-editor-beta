@@ -76,7 +76,23 @@
     <ul id="requirement-list"></ul>
     <form method="dialog"><button value="ok" autofocus>OK</button></form>
   </dialog>
-  <div class="copy-ai image-tools" id="image-tools" hidden>
+  <dialog class="floating-tools" id="video-tools" aria-labelledby="video-heading">
+    <form id="video-controls">
+      <div class="copy-ai-heading">
+        <strong id="video-heading">Video options</strong>
+        <button type="button" id="close-video" data-close aria-label="Close video options"></button>
+      </div>
+      <label for="video-url">Vimeo URL or video ID</label>
+      <input id="video-url" type="text" maxlength="300" autofocus>
+      <div class="actions">
+        <button type="submit">Preview video</button>
+        <button class="secondary" type="button" id="remove-video" hidden>Remove video</button>
+      </div>
+      <p id="video-status" role="status"></p>
+      <iframe id="video-player" title="Vimeo video preview" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen hidden></iframe>
+    </form>
+  </dialog>
+  <div class="copy-ai image-tools floating-tools" id="image-tools" hidden>
       <form id="image-controls" aria-labelledby="image-heading">
         <div class="copy-ai-heading">
           <strong id="image-heading">Replace image</strong>

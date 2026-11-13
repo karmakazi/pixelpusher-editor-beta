@@ -46,10 +46,11 @@ iframe.mobile { width: min(100%, 390px); }
 #portfolio-status { font-size: .85rem; line-height: 1.5; }
 
 #portfolio-options button { margin-top: .55rem; }
-.image-tools {
+.floating-tools {
   position: fixed;
   z-index: 10;
   width: min(320px, calc(100vw - 24px));
+  color: inherit;
   overflow: auto;
   background: #1b1c18;
   border: 1px solid #626455;
@@ -57,13 +58,13 @@ iframe.mobile { width: min(100%, 390px); }
   box-shadow: 0 6px 24px #0009;
   padding: 12px;
 }
-.image-tools .copy-ai-heading {
+.floating-tools .copy-ai-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
-.image-tools [data-close] {
+.floating-tools [data-close] {
   display: grid;
   place-items: center;
   width: 32px;
@@ -73,16 +74,16 @@ iframe.mobile { width: min(100%, 390px); }
   border-color: #777;
   color: inherit;
 }
-.image-tools [data-close]::before,
-.image-tools [data-close]::after {
+.floating-tools [data-close]::before,
+.floating-tools [data-close]::after {
   content: '';
   grid-area: 1 / 1;
   width: 12px;
   height: 2px;
   background: currentColor;
 }
-.image-tools [data-close]::before { transform: rotate(45deg); }
-.image-tools [data-close]::after { transform: rotate(-45deg); }
+.floating-tools [data-close]::before { transform: rotate(45deg); }
+.floating-tools [data-close]::after { transform: rotate(-45deg); }
 .image-tools .hint, #image-status { font-size: .82rem; }
 .image-tools details { margin-top: 10px; }
 .image-tools summary { cursor: pointer; }
@@ -100,3 +101,9 @@ iframe.mobile { width: min(100%, 390px); }
 #requirements-heading { margin: 0; font-size: 1.1rem; }
 #requirement-list { padding-left: 1.3rem; line-height: 1.6; }
 #publish-requirements form { display: flex; justify-content: flex-end; }
+
+#video-tools { width: min(580px, calc(100vw - 24px)); }
+#video-tools::backdrop { background: #0008; }
+#video-status { font-size: .82rem; }
+#video-status:empty { display: none; }
+#video-player { display: block; aspect-ratio: 16 / 9; min-height: 0; margin-top: .75rem; }

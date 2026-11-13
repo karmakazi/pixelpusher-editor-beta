@@ -24,7 +24,7 @@ const CaseCopy = (() => {
   }
 
   function definition(field) {
-    if (field === 'video') return { label: 'Video', max: 15 };
+    if (field === 'video') return { label: 'Video', max: 300 };
     if (Object.hasOwn(fields, field)) return fields[field];
     const image = imageField(field);
     if (!image) return null;
@@ -51,6 +51,32 @@ const CaseCopy = (() => {
     }
   }
 
+  function parseVideo(input) {
+    const value = input.trim();
+    if (/^\d{1,15}$/.test(value)) return { id: value, hash: '' };
+    const match = /^https:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d{1,15})(?:\/([A-Za-z0-9]{1,64}))?\/?(?:\?([^#]*))?(?:#.*)?$/i.exec(value);
+    if (!match) return null;
+    const [, id, pathHash, query] = match;
+    const queryHash = new URLSearchParams(query).get('h');
+    if (queryHash !== null && (!/^[A-Za-z0-9]{1,64}$/.test(queryHash) || (pathHash && pathHash !== queryHash))) return null;
+    return { id, hash: pathHash || queryHash || '' };
+  }
+
+  function normalizeVideo(input) {
+    const video = parseVideo(input);
+    if (!video) return null;
+    return video.hash ? `https://vimeo.com/${video.id}/${video.hash}` : video.id;
+  }
+
+  function videoUrls(value) {
+    const video = parseVideo(value);
+    if (!video) return null;
+    return {
+      watch: `https://vimeo.com/${video.id}${video.hash ? `/${video.hash}` : ''}`,
+      player: `https://player.vimeo.com/video/${video.id}${video.hash ? `?h=${video.hash}` : ''}`,
+    };
+  }
+
   function read(project, field) {
     if (field === 'video') return project.videoId ?? project.vimeoId ?? '';
     const image = imageField(field);
@@ -69,7 +95,7 @@ const CaseCopy = (() => {
   function valid(field, value) {
     const details = definition(field);
     if (!details || typeof value !== 'string') return false;
-    if (field === 'video') return /^\d{0,15}$/.test(value);
+    if (field === 'video') return value === '' || (value.length <= details.max && normalizeVideo(value) === value);
     if (imageField(field)?.type === 'url') return validImageUrl(value);
     const { max, required, list } = details;
     return value.length <= max && (!required || Boolean(value.trim())) &&
@@ -120,7 +146,7 @@ const CaseCopy = (() => {
     return updated;
   }
 
-  return { fields, definition, hasField, read, valid, validPreview, normalize, apply, escape: encode };
+  return { fields, definition, hasField, read, valid, validPreview, normalize, apply, normalizeVideo, videoUrls, escape: encode };
 })();
 
 if (typeof module !== 'undefined') module.exports = CaseCopy;
