@@ -457,8 +457,8 @@
     "tagline": "We levelled the playing field at the most chaotic sneaker drop on the planet.",
     "pullQuote": "At ComplexCon, resellers always won. We built a system that made sure they couldn’t.",
     "copy": [
-      "Jam3 brought us into one of the most technically complex activations we’d ever built. At ComplexCon, limited sneaker drops are chaos — large-scale resellers scoop product the moment it hits, leaving real collectors empty-handed. Adidas wanted to fix that. We built onto the Complex app, integrating AR, Bluetooth beacons, and a network of internet-connected lockers to create a drop system where every attendee had an equal shot.",
-      "Our contribution was the backend engine: a CMS that let Adidas admins schedule and manage drops in real time — controlling locations, inventory, shoe types, and pricing — while processing payments and remotely unlocking the right lockers for the right buyers at the right moment. The system ran without a hitch across a packed convention floor. The project was covered by Engadget and won a Cannes Digital Craft Bronze Lion and two One Show Bronze Pencils."
+      "Jam3 brought us into one of the most technically complex activations we’d ever built. At ComplexCon, limited sneaker drops are chaotic because large-scale resellers scoop up products as soon as they’re available, leaving real collectors empty-handed. Adidas wanted to fix that. We built onto the Complex app, integrating AR, Bluetooth beacons, and a network of internet-connected lockers to create a drop system where every attendee had an equal shot.",
+      "Our contribution was the backend engine, a CMS that let Adidas admins schedule and manage drops in real time, controlling locations, inventory, shoe types, and pricing. It also processed payments and remotely unlocked the right lockers for the right buyers at the right moment. The system ran without a hitch across a packed convention floor. The project was covered by Engadget and won a Cannes Digital Craft Bronze Lion and two One Show Bronze Pencils."
     ],
     "gallery": [
       {
@@ -469,17 +469,20 @@
       {
         "wide": false,
         "seed": "adidas-a",
-        "alt": "AR drop experience"
+        "alt": "AR drop experience",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/d9bd1207-4747-4def-be84-4dc85cf54475-vxXFjVJ6iO9yR06NiU44sAhaE4NPAz.png"
       },
       {
         "wide": false,
         "seed": "adidas-b",
-        "alt": "Locker unlock moment"
+        "alt": "Locker unlock moment",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/4fbaf5f0-56cc-4986-933f-f89600db5c8d-zKjTM1b3CLp5X6xNPJMoWeHPsROaHH.png"
       },
       {
         "wide": true,
         "seed": "adidas-wide2",
-        "alt": "Convention floor activation"
+        "alt": "Convention floor activation",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/e8281818-2eaa-4ff5-9717-0e9a3ae42bec-QBszBwDMBchGVs6TSzq1iBvwSIPdJK.png"
       }
     ],
     "meta": {
