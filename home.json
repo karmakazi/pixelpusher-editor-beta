@@ -1,0 +1,166 @@
+{
+  "seo": {
+    "title": "Pixelpusher — We Do Impossible",
+    "description": "Pixelpusher is a Toronto-based creative studio building campaigns, digital experiences, and brand moments for the world’s most ambitious brands."
+  },
+  "hero": {
+    "eyebrow": "Creative Studio — Toronto",
+    "headline": "We Do\nImpossible",
+    "intro": "Twenty-five years of campaigns, digital experiences, and brand moments that changed how people feel about the brands they love.",
+    "established": "Est. 1999",
+    "scrollLabel": "Scroll to explore",
+    "video": "https://vimeo.com/1217666625/dfce6ecff5"
+  },
+  "work": {
+    "heading": "Selected Work",
+    "linkLabel": "All Projects →",
+    "intro": "Ambitious briefs. Impossible results. A curated look at work that moved culture for the world’s biggest brands."
+  },
+  "services": [
+    {
+      "heading": "User\nExperience",
+      "intro": "We design digital products people actually want to use. From the first interaction to the last, we map every moment of friction, every point of delight, and build experiences that feel inevitable — like they couldn’t have been made any other way.",
+      "capabilities": [
+        {
+          "heading": "UX Research & Strategy",
+          "description": "We start by understanding people before we start designing for them. Interviews, usability tests, and analytics — we dig until we know what actually matters."
+        },
+        {
+          "heading": "Information Architecture",
+          "description": "Every piece of content has a home. We build the structures that make complex information feel effortless to navigate."
+        },
+        {
+          "heading": "Interaction Design",
+          "description": "The details that make digital feel physical. Micro-interactions, transitions, and feedback states that turn using software into a pleasure."
+        },
+        {
+          "heading": "Prototyping & Testing",
+          "description": "We build to learn. Rapid prototypes put real ideas in front of real people before a single line of production code is written."
+        },
+        {
+          "heading": "Design Systems",
+          "description": "Consistency at scale. A single source of truth for every component, pattern, and decision across your entire product."
+        }
+      ]
+    },
+    {
+      "heading": "Development",
+      "intro": "Code is craft. We build what others say can’t be built — performant, accessible, and obsessively detailed. Whether it’s a marketing site or a custom interactive platform, we write the kind of code that holds up five years from now.",
+      "capabilities": [
+        {
+          "heading": "Web & Application Development",
+          "description": "From marketing sites to complex web apps, we build with modern standards — fast, accessible, and designed to last."
+        },
+        {
+          "heading": "Custom CMS Integration",
+          "description": "Content management that fits the way your team actually works. We make Sanity, Contentful, and Prismic feel completely native to your product."
+        },
+        {
+          "heading": "API & Backend Engineering",
+          "description": "The invisible architecture that makes everything run. Scalable, secure, and designed for the demands of modern digital products."
+        },
+        {
+          "heading": "Performance Optimization",
+          "description": "Speed is a feature. We audit, refactor, and optimize until your product loads fast on any device, anywhere in the world."
+        },
+        {
+          "heading": "QA & Launch Support",
+          "description": "Nothing ships without our sign-off. We test across devices, browsers, and edge cases so launch day is a celebration, not a crisis."
+        }
+      ]
+    },
+    {
+      "heading": "Digital\nActivations",
+      "intro": "The best brand moments don’t live on a screen — they happen in the world and get shared everywhere else. We design physical-digital experiences that put people inside the story, from concept through build to the last social post.",
+      "capabilities": [
+        {
+          "heading": "Experiential Concept & Design",
+          "description": "The big idea that makes people stop, stay, and share. We concept experiences that are genuinely worth showing up for."
+        },
+        {
+          "heading": "Interactive Installations",
+          "description": "Physical technology that responds to people in real time — touch, motion, sound, and light, orchestrated into a single unforgettable moment."
+        },
+        {
+          "heading": "Event Technology",
+          "description": "The infrastructure behind the magic. Custom software, hardware integration, and tech production that runs flawlessly under pressure."
+        },
+        {
+          "heading": "Content Capture & Distribution",
+          "description": "Every activation is a content opportunity. We plan the capture strategy before the doors open so nothing great goes unrecorded."
+        },
+        {
+          "heading": "Live Production Support",
+          "description": "On the ground, on the day. Our team manages every technical aspect of your activation from load-in to strike."
+        }
+      ]
+    },
+    {
+      "heading": "Artificial\nIntelligence",
+      "intro": "AI isn’t a trend we’re chasing — it’s a tool we’ve been building with. We use it to accelerate creative, personalize experiences at scale, and solve problems that used to require ten times the budget and twice the time.",
+      "capabilities": [
+        {
+          "heading": "Generative Creative Production",
+          "description": "AI that accelerates without homogenizing. We use generative tools to push creative volume and variation while keeping the work unmistakably yours."
+        },
+        {
+          "heading": "AI-Powered Personalization",
+          "description": "Experiences that adapt in real time to who is experiencing them. Relevance at a scale no human team could manage alone."
+        },
+        {
+          "heading": "Conversational Interfaces",
+          "description": "Chatbots built to actually be useful — trained on your brand voice, connected to your data, and designed for real conversations."
+        },
+        {
+          "heading": "Workflow Automation",
+          "description": "The repetitive work that drains your team? We automate it — briefing, resizing, reporting, scheduling — so people can focus on what only people can do."
+        }
+      ]
+    }
+  ],
+  "about": {
+    "stats": [
+      {
+        "number": "25+",
+        "label": "Years of doing impossible"
+      },
+      {
+        "number": "200+",
+        "label": "Campaigns launched worldwide"
+      },
+      {
+        "number": "47",
+        "label": "Industry awards"
+      }
+    ],
+    "paragraphs": [
+      "Pixelpusher is a Toronto-based creative studio that has spent over two decades proving that the best ideas are the ones nobody thought could work. We are relentless in the pursuit of work that matters — work that changes how people feel about a brand, a product, or an idea.",
+      "We’ve partnered with Colgate, Cadillac, Gatorade, Adidas, Ford, and Shiseido, among many others. The briefs were ambitious. The results were things nobody had seen before. That’s not a coincidence — that’s the standard we set for every project we take on."
+    ],
+    "heading": "Impossible\nis our\nbrief."
+  },
+  "clients": {
+    "names": [
+      "Colgate",
+      "Cadillac",
+      "Gatorade",
+      "Adidas",
+      "Ford",
+      "Shiseido",
+      "D’Italiano",
+      "Sport Chek",
+      "Volkswagen",
+      "Rick Hansen Foundation",
+      "Michael Hill",
+      "MiO"
+    ],
+    "heading": "Our Clients"
+  },
+  "contact": {
+    "eyebrow": "Get in Touch",
+    "heading": "Ready to do\nimpossible?",
+    "intro": "Let’s build something nobody’s ever seen before. Tell us about your brief — the more impossible it sounds, the more interested we are.",
+    "linkLabel": "Start a Project →",
+    "email": "hello@pixelpusher.ca"
+  }
+}

@@ -1066,3 +1066,14 @@ footer a:hover { color: var(--off-white); }
   font: 650 13px system-ui, sans-serif;
   cursor: pointer !important;
 }
+
+.home-video-editor {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.home-video-editor button { pointer-events: auto; }
+.editor-preview [data-home-field][contenteditable="plaintext-only"] { cursor: text !important; }
+.editor-preview [data-home-field]:hover,
+.editor-preview [data-home-field]:focus { outline: 1px dashed #d9f36c; outline-offset: 3px; }

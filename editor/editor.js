@@ -331,14 +331,11 @@ function editField(inline = false) {
 }
 
 window.addEventListener('message', event => {
-  if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing) return;
+  if (event.origin !== location.origin || event.source !== preview.contentWindow || !selected || releasing || !homeControls.hidden) return;
   const { type, projectId, field, paragraph, value, image } = event.data || {};
   if (projectId !== selected.id) return;
   if (type === 'pixelpusher-video-options') {
-    videoUrl.value = edits.video ?? CaseCopy.read(selected, 'video');
-    videoStatus.textContent = '';
-    showVideoPlayer(videoUrl.value);
-    if (!videoTools.open) videoTools.showModal();
+    openVideoOptions(edits.video ?? CaseCopy.read(selected, 'video'));
     return;
   }
   if (type === 'pixelpusher-image-select') {
@@ -387,6 +384,23 @@ window.addEventListener('message', event => {
   }
 });
 
+function openVideoOptions(value) {
+  videoUrl.value = value;
+  videoStatus.textContent = '';
+  showVideoPlayer(value);
+  if (!videoTools.open) videoTools.showModal();
+}
+
+function stageVideo(value) {
+  if (!homeControls.hidden) {
+    stageHome('hero.video', value);
+    return;
+  }
+  revision++;
+  stageField('video', value);
+  updateDraft();
+}
+
 function showVideoPlayer(value) {
   const urls = CaseCopy.videoUrls(value);
   removeVideo.hidden = !value;
@@ -405,17 +419,13 @@ videoControls.addEventListener('submit', event => {
     videoStatus.textContent = 'Enter a Vimeo link or numeric video ID. For an unlisted video, paste the full share link.';
     return;
   }
-  revision++;
-  stageField('video', value);
-  updateDraft();
+  stageVideo(value);
   showVideoPlayer(value);
   videoStatus.textContent = /^\d+$/.test(value) ? 'For an unlisted video, use the full share link.' : '';
 });
 
 removeVideo.addEventListener('click', () => {
-  revision++;
-  stageField('video', '');
-  updateDraft();
+  stageVideo('');
   videoUrl.value = '';
   videoStatus.textContent = 'Video removed from the draft.';
   showVideoPlayer('');
@@ -619,9 +629,13 @@ async function requestDraft(instruction) {
 async function verifyRelease(projectId, changes) {
   for (let attempt = 0; attempt < 30; attempt++) {
     try {
-      const response = await fetch(`/projects.json?release-check=${Date.now()}`, { cache: 'no-store' });
-      const current = response.ok && (await response.json()).find(item => item.id === projectId);
-      if (matches(current, changes)) return true;
+      const file = projectId ? 'projects.json' : 'home.json';
+      const response = await fetch(`/${file}?release-check=${Date.now()}`, { cache: 'no-store' });
+      if (response.ok) {
+        const content = await response.json();
+        if (projectId ? matches(content.find(item => item.id === projectId), changes) :
+          Object.entries(changes).every(([field, value]) => HomeContent.read(content, field) === value)) return true;
+      }
     } catch {
       // A deployment can briefly be unavailable.
     }
@@ -789,7 +803,7 @@ fetch('/projects.json')
       projectSelect.add(new Option(`${CaseCopy.read(project, 'client')} — ${CaseCopy.read(project, 'title').replaceAll('\n', ' ')}`, project.id));
     }
     if (!projectSelect.options.length) throw new Error('No case studies available.');
-    projectSelect.disabled = openPortfolio.disabled = newCaseButton.disabled = false;
+    projectSelect.disabled = openPortfolio.disabled = newCaseButton.disabled = openHome.disabled = false;
     selectProject();
   })
   .catch(error => { status.textContent = error.message; });
@@ -886,7 +900,7 @@ openPortfolio.onclick = () => {
   newCaseButton.hidden = true;
   newCaseButton.disabled = false;
   portfolioList.value = 'work';
-  caseControls.hidden = openPortfolio.hidden = true;
+  caseControls.hidden = openPortfolio.hidden = openHome.hidden = true;
   portfolioControls.hidden = false;
   portfolioBase = projects;
   resetPortfolioDraft();
@@ -897,7 +911,7 @@ backToEditor.onclick = () => {
   if (portfolioDirty() && !window.confirm('Discard unpublished changes to the portfolio?')) return;
   resetPortfolioDraft();
   portfolioControls.hidden = true;
-  caseControls.hidden = openPortfolio.hidden = newCaseButton.hidden = false;
+  caseControls.hidden = openPortfolio.hidden = newCaseButton.hidden = openHome.hidden = false;
   loadProjectOptions(selected?.id);
   selectProject();
 };
@@ -1011,3 +1025,170 @@ window.addEventListener('message', event => {
   } else return;
   renderPortfolio();
 });
+
+const openHome = document.querySelector('#open-home');
+const homeControls = document.querySelector('#home-controls');
+const homeField = document.querySelector('#home-field');
+const homeDraft = document.querySelector('#home-draft');
+const homeVideo = document.querySelector('#home-video');
+const homeStatus = document.querySelector('#home-status');
+const publishHome = document.querySelector('#publish-home');
+const undoHome = document.querySelector('#undo-home');
+const resetHome = document.querySelector('#reset-home');
+let publishedHome;
+let homeFields;
+let homeEdits = {};
+let homeUndo;
+
+function previewHome(inline = false, field) {
+  if (homeControls.hidden) return;
+  const changes = Object.fromEntries(Object.entries(homeEdits).filter(([field, value]) => HomeContent.valid(field, value)));
+  preview.contentWindow.postMessage({
+    type: 'pixelpusher-home-preview',
+    content: HomeContent.apply(publishedHome, changes),
+    field,
+    inline,
+    locked: releasing,
+  }, location.origin);
+}
+
+function updateHome() {
+  const entries = Object.entries(homeEdits);
+  const invalid = entries.find(([field, value]) => !HomeContent.valid(field, value));
+  homeStatus.textContent = invalid ? 'Check the value for ' + homeFields[invalid[0]] + '.' : '';
+  publishHome.disabled = releasing || !entries.length || Boolean(invalid);
+  undoHome.disabled = releasing || Boolean(entries.length) || !homeUndo;
+  resetHome.disabled = releasing || !entries.length;
+  homeDraft.disabled = homeField.disabled = homeVideo.disabled = releasing;
+  document.querySelector('#close-home').disabled = releasing;
+}
+
+function showHomeField() {
+  const field = homeField.value;
+  homeDraft.hidden = homeDraft.labels[0].hidden = field === 'hero.video';
+  homeVideo.hidden = field !== 'hero.video';
+  homeDraft.value = homeEdits[field] ?? HomeContent.read(publishedHome, field);
+  updateHome();
+}
+
+function stageHome(field, value, inline = false) {
+  const normalized = HomeContent.normalize(field, value);
+  if (normalized === HomeContent.read(publishedHome, field)) delete homeEdits[field];
+  else homeEdits[field] = normalized ?? value;
+  updateHome();
+  previewHome(inline, field);
+}
+
+async function loadHome() {
+  const response = await fetch('/home.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not load homepage content.');
+  return response.json();
+}
+
+openHome.onclick = async () => {
+  if (releasing || pending || checkingImages || !selected) return;
+  const openingProject = selected;
+  const openingRevision = revision;
+  if ((selected === draftCase || Object.keys(edits).length || imageFiles.size || suggestion !== null) &&
+      !window.confirm('Discard unpublished edits to this case study?')) return;
+  openHome.disabled = true;
+  try {
+    publishedHome ??= await loadHome();
+    if (releasing || !portfolioControls.hidden || selected !== openingProject || revision !== openingRevision) return;
+    homeFields = HomeContent.fields(publishedHome);
+    homeField.replaceChildren(...Object.entries(homeFields).map(([field, label]) => new Option(label, field)));
+    homeField.value = 'hero.headline';
+    caseControls.hidden = newCaseButton.hidden = openPortfolio.hidden = openHome.hidden = true;
+    imageTools.hidden = true;
+    homeControls.hidden = false;
+    document.querySelector('#heading').textContent = 'Edit homepage';
+    commitLink.hidden = liveLink.hidden = true;
+    releaseStatus.textContent = '';
+    preview.src = '/?editor-preview=1&home-editor=1#/';
+    showHomeField();
+  } catch (error) {
+    releaseStatus.textContent = error.message;
+  } finally {
+    openHome.disabled = false;
+  }
+};
+
+document.querySelector('#close-home').onclick = () => {
+  if (releasing || (Object.keys(homeEdits).length && !window.confirm('Discard unpublished homepage edits?'))) return;
+  homeEdits = {};
+  homeControls.hidden = true;
+  document.querySelector('#heading').textContent = 'Edit a case study';
+  caseControls.hidden = newCaseButton.hidden = openPortfolio.hidden = openHome.hidden = false;
+  selectProject();
+};
+
+homeField.onchange = showHomeField;
+homeDraft.oninput = () => stageHome(homeField.value, homeDraft.value);
+homeVideo.onclick = () => openVideoOptions(homeEdits['hero.video'] ?? publishedHome.hero.video);
+resetHome.onclick = () => {
+  homeEdits = {};
+  showHomeField();
+  previewHome();
+};
+
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== preview.contentWindow || homeControls.hidden) return;
+  const { type, field, value, projectId } = event.data || {};
+  if (type === 'pixelpusher-home-ready') {
+    previewHome();
+    return;
+  }
+  if (releasing) return;
+  if (type === 'pixelpusher-video-options' && projectId === 'homepage') {
+    homeField.value = 'hero.video';
+    showHomeField();
+    homeVideo.click();
+    return;
+  }
+  if (!Object.hasOwn(homeFields, field)) return;
+  if (type === 'pixelpusher-home-select') {
+    homeField.value = field;
+    showHomeField();
+  } else if (type === 'pixelpusher-home-input' && typeof value === 'string') {
+    homeField.value = field;
+    homeDraft.value = value;
+    stageHome(field, value, true);
+  }
+});
+
+async function releaseHome(restoring) {
+  if (releasing || (restoring ? undoHome.disabled : publishHome.disabled)) return;
+  const changes = restoring ? homeUndo : homeEdits;
+  const previous = Object.fromEntries(Object.keys(changes).map(field => [field, HomeContent.read(publishedHome, field)]));
+  releasing = signOut.disabled = true;
+  updateHome();
+  previewHome(true);
+  commitLink.hidden = liveLink.hidden = true;
+  releaseStatus.textContent = 'Publishing homepage to GitHub…';
+  try {
+    const response = await fetch('/api/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ homepage: true, previous, changes, undo: restoring }),
+    });
+    if (response.status === 401) return sessionExpired();
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    publishedHome = HomeContent.apply(publishedHome, changes);
+    homeUndo = restoring ? null : previous;
+    homeEdits = {};
+    showHomeField();
+    showReleaseCommit(result.commit);
+    const live = await verifyRelease(null, changes);
+    showReleaseResult(live, restoring, '/', 'homepage');
+  } catch (error) {
+    releaseStatus.textContent = error.message;
+  } finally {
+    releasing = signOut.disabled = false;
+    updateHome();
+    previewHome();
+  }
+}
+
+publishHome.onclick = () => releaseHome(false);
+undoHome.onclick = () => releaseHome(true);

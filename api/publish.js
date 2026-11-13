@@ -1,9 +1,10 @@
 const { isSignedIn } = require('../lib/editor-session');
 const CaseCopy = require('../editor/case-copy');
 const Portfolio = require('../editor/portfolio');
+const HomeContent = require('../editor/home-content');
 
 const repo = 'karmakazi/pixelpusher-editor-beta';
-const contentsUrl = `https://api.github.com/repos/${repo}/contents/projects.json`;
+const contentsBase = `https://api.github.com/repos/${repo}/contents`;
 const branch = 'main';
 
 function replaceCopy(source, projects, index, changes) {
@@ -37,16 +38,18 @@ module.exports = async function publish(req, res) {
   if (!isSignedIn(req, EDITOR_ACCESS_TOKEN)) {
     return res.status(401).json({ error: 'Sign in to continue.' });
   }
-  const { projectId, previous, tagline, undo, portfolio } = req.body || {};
+  const { projectId, previous, tagline, undo, portfolio, homepage } = req.body || {};
   const changes = req.body?.changes ?? { tagline };
   const baseline = typeof previous === 'string' ? { tagline: previous } : previous;
   const entries = changes && typeof changes === 'object' ? Object.entries(changes) : [];
-  if (!portfolio && (typeof projectId !== 'string' || !baseline || !entries.length ||
+  if (homepage && portfolio) return res.status(400).json({ error: 'Choose one type of edit.' });
+  if (!homepage && !portfolio && (typeof projectId !== 'string' || !baseline || !entries.length ||
       !entries.every(([field, value]) => CaseCopy.valid(field, value) &&
         Object.hasOwn(baseline, field) && typeof baseline[field] === 'string' &&
         baseline[field] !== value && CaseCopy.normalize(field, value) === value))) {
     return res.status(400).json({ error: 'Choose a case study and check the edited fields.' });
   }
+  const contentsUrl = `${contentsBase}/${homepage ? 'home.json' : 'projects.json'}`;
   const headers = {
     Accept: 'application/vnd.github+json',
     Authorization: `Bearer ${GITHUB_PUBLISH_TOKEN}`,
@@ -64,7 +67,19 @@ module.exports = async function publish(req, res) {
     const projects = JSON.parse(source);
     let updated;
     let message;
-    if (portfolio) {
+    if (homepage) {
+      const allowed = HomeContent.fields(projects);
+      if (!baseline || !entries.length || !entries.every(([field, value]) =>
+        Object.hasOwn(allowed, field) && HomeContent.valid(field, value) &&
+        Object.hasOwn(baseline, field) && typeof baseline[field] === 'string' && baseline[field] !== value)) {
+        return res.status(400).json({ error: 'Check the edited homepage fields.' });
+      }
+      if (entries.some(([field]) => HomeContent.read(projects, field) !== baseline[field])) {
+        return res.status(409).json({ error: 'The homepage changed in GitHub. Reload after the latest deployment before editing it.' });
+      }
+      updated = JSON.stringify(HomeContent.apply(projects, changes), null, 2) + '\n';
+      message = undo === true ? 'Restore homepage content' : 'Update homepage content';
+    } else if (portfolio) {
       const { before, after, newProject, removeProject } = portfolio;
       const current = Portfolio.order(projects);
       if (JSON.stringify(current.work) !== JSON.stringify(before?.work) ||

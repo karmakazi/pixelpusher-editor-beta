@@ -7,6 +7,7 @@
   <title>Pixelpusher Editor</title>
   <link rel="stylesheet" href="/editor/editor.css">
   <script defer src="/editor/case-copy.js"></script>
+  <script defer src="/editor/home-content.js"></script>
   <script defer src="/editor/portfolio.js"></script>
   <script defer src="/editor/editor.js"></script>
 </head>
@@ -26,6 +27,7 @@
       <h1 id="heading">Edit a case study</h1>
       <button type="button" class="secondary" id="open-portfolio" disabled>Manage case studies</button>
       <button type="button" class="secondary" id="new-case" disabled>New case study</button>
+      <button type="button" class="secondary" id="open-home" disabled>Edit homepage</button>
       <div id="case-controls">
         <label for="project">Project</label>
         <select id="project" disabled></select>
@@ -45,6 +47,21 @@
           <button class="secondary" id="reset" disabled>Reset all edits</button>
         </div>
       </div>
+      <section id="home-controls" hidden aria-label="Edit homepage">
+        <button class="secondary" id="close-home" type="button">Back to case studies</button>
+        <p class="hint">Click text in the preview or choose a field below. Enter one client name per line.</p>
+        <label for="home-field">Homepage field</label>
+        <select id="home-field"></select>
+        <label for="home-draft">Draft content</label>
+        <textarea id="home-draft" rows="4" maxlength="4000"></textarea>
+        <button id="home-video" type="button" hidden>Video options</button>
+        <p id="home-status" role="status"></p>
+        <div class="actions">
+          <button id="publish-home" type="button" disabled>Publish to beta</button>
+          <button id="undo-home" class="secondary" type="button" disabled>Undo publish</button>
+          <button id="reset-home" class="secondary" type="button" disabled>Reset draft</button>
+        </div>
+      </section>
       <section id="portfolio-controls" hidden aria-label="Manage case studies">
         <button type="button" class="secondary" id="back-to-editor">Back to editor</button>
         <label for="portfolio-list">Display order</label>

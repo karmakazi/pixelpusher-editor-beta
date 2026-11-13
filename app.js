@@ -2,11 +2,15 @@
 
 // ── STATE ──────────────────────────────────────────────────
 let PROJECTS = [];
+let home;
+let homeLocked = false;
+let homeFields;
 let currentView = null;
 let revealObs = null;
 let casePreview = null;
 const draftCaseId = new URLSearchParams(location.search).get('draft-case');
 let portfolioPreview = null;
+let portfolioPreviewView;
 let portfolioSelectedCard = null;
 let portfolioLocked = false;
 let refreshCopyAI;
@@ -17,6 +21,20 @@ if (editorPreview) {
   refreshCopyAI = setupCopyAI();
   window.addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== window.parent) return;
+    if (event.data?.type === 'pixelpusher-home-preview' && homeEditing()) {
+      const { content, inline, locked, field } = event.data;
+      home = content;
+      homeLocked = locked;
+      if (!inline && PROJECTS.length) {
+        const node = field && [...document.querySelectorAll('[data-home-field]')].find(item => item.dataset.homeField === field);
+        if (node) node.innerHTML = homeText(field, false);
+        else renderHome(true);
+      }
+      for (const node of document.querySelectorAll('[data-home-field]')) {
+        node.contentEditable = locked ? 'false' : 'plaintext-only';
+      }
+      return;
+    }
     if (event.data?.type === 'pixelpusher-portfolio-preview') {
       const { lists, newProject, view, base, selectedCard, locked } = event.data;
       if (!['work', 'featured', 'new'].includes(view)) return;
@@ -24,6 +42,7 @@ if (editorPreview) {
         const created = newProject ? Portfolio.create(newProject, location.origin) : null;
         const projects = Array.isArray(base) ? base : PROJECTS;
         portfolioPreview = Portfolio.arrange(created ? [...projects, created] : projects, lists);
+        portfolioPreviewView = view;
         portfolioSelectedCard = selectedCard;
         portfolioLocked = locked;
         if (view === 'new') {
@@ -78,8 +97,9 @@ if (editorPreview) {
     if (image) selectPreviewImage(image);
   });
   document.addEventListener('click', event => {
-    if (!event.target.closest('[data-video-options]') || casePreview?.locked) return;
-    window.parent.postMessage({ type: 'pixelpusher-video-options', projectId: currentView.slice(5) }, location.origin);
+    const button = event.target.closest('[data-video-options]');
+    if (!button || casePreview?.locked || homeLocked) return;
+    window.parent.postMessage({ type: 'pixelpusher-video-options', projectId: button.dataset.videoOptions }, location.origin);
   });
   document.addEventListener('keydown', event => {
     const image = event.target.closest('[data-edit-image]');
@@ -88,6 +108,16 @@ if (editorPreview) {
       selectPreviewImage(image);
     }
   });
+}
+
+if (homeEditing()) {
+  for (const [eventName, type] of [['focusin', 'select'], ['input', 'input']]) {
+    document.addEventListener(eventName, event => {
+      const node = event.target.closest('[data-home-field]');
+      if (!node || homeLocked) return;
+      window.parent.postMessage({ type: 'pixelpusher-home-' + type, field: node.dataset.homeField, value: node.innerText }, location.origin);
+    });
+  }
 }
 
 function selectPreviewImage(image) {
@@ -504,24 +534,81 @@ function countUp(el, target, suffix) {
   })(t0);
 }
 
-function marqueeHtml() {
-  const names = [
-    'Colgate', 'Cadillac', 'Gatorade', 'Adidas', 'Ford', 'Shiseido',
-    'D\u2019Italiano', 'Sport Chek', 'Volkswagen',
-    'Rick Hansen Foundation', 'Michael Hill', 'MiO',
-  ];
-  // Doubled for seamless loop
-  return [...names, ...names]
-    .map(n => `<span class="marquee-name">${n}</span><span class="marquee-sep">\u2014</span>`)
-    .join('');
+function homeEditing() {
+  return editorPreview && new URLSearchParams(location.search).has('home-editor');
+}
+
+function sendHomeReady() {
+  window.parent.postMessage({ type: 'pixelpusher-home-ready' }, location.origin);
+}
+
+function homeText(field, editable = true) {
+  const value = CaseCopy.escape(HomeContent.read(home, field)).replaceAll('\n', '<br>');
+  if (!homeEditing() || !editable) return value;
+  return `<span data-home-field="${field}" aria-label="${CaseCopy.escape(homeFields[field])}" role="textbox" contenteditable="${homeLocked ? 'false' : 'plaintext-only'}">${value}</span>`;
+}
+
+function homeStat(index) {
+  const number = home.about.stats[index].number;
+  return ` data-count="${parseInt(number, 10)}"${number.endsWith('+') ? ' data-suffix="+"' : ''}`;
+}
+
+function homeMarquee() {
+  const names = home.clients.names;
+  return [...names, ...names].map(name =>
+    `<span class="marquee-name">${CaseCopy.escape(name)}</span><span class="marquee-sep">—</span>`
+  ).join('');
+}
+
+function homeService(service, index) {
+  const key = `services.${index}`;
+  const style = ['cream', 'ecru', 'warm', 'charcoal'][index];
+  return `
+    <section class="service service--${style}"${index === 0 ? ' id="services"' : ''}>
+      <div>
+        <p class="service-num r">${String(index + 1).padStart(2, '0')}</p>
+        <h2 class="service-title r d1">${homeText(key + '.heading')}</h2>
+      </div>
+      <div class="r d2">
+        <p class="service-copy">${homeText(key + '.intro')}</p>
+        <ul class="caps">
+          ${service.capabilities.map((_, i) => {
+            const field = `${key}.capabilities.${i}`;
+            return `<li class="cap-item">
+              <button class="cap-btn"><span>${homeText(field + '.heading', false)}</span><span class="cap-icon">+</span></button>
+              <div class="cap-body"><div class="cap-inner">${homeText(field + '.description')}</div></div>
+            </li>`;
+          }).join('')}
+        </ul>
+      </div>
+    </section>`;
+}
+
+function homePlayer() {
+  const urls = CaseCopy.videoUrls(home.hero.video);
+  if (!urls) return '';
+  const url = new URL(urls.player);
+  for (const [key, value] of Object.entries({ background: 1, autoplay: 1, loop: 1, muted: 1, byline: 0, title: 0 })) {
+    url.searchParams.set(key, value);
+  }
+  return url.href;
+}
+
+function videoOptionsButton(projectId, hasVideo) {
+  return `<div class="case-video-editor${projectId === 'homepage' ? ' home-video-editor' : ''}">
+    <button type="button" data-video-options="${CaseCopy.escape(projectId)}" aria-haspopup="dialog">${hasVideo ? 'Edit video' : 'Add video'}</button>
+  </div>`;
 }
 
 // ── RENDER: HOME ──────────────────────────────────────────
-function renderHome() {
+function renderHome(preserveScroll = false) {
+  if (!home) return;
+  if (homeEditing()) homeFields ??= HomeContent.fields(home);
   currentView = 'home';
-  document.title = 'Pixelpusher \u2014 We Do Impossible';
-  setMeta('Pixelpusher is a Toronto-based creative studio building campaigns, digital experiences, and brand moments for the world\u2019s most ambitious brands.');
-  window.scrollTo(0, 0);
+  document.title = home.seo.title;
+  setMeta(home.seo.description);
+  const opened = preserveScroll ? [...document.querySelectorAll('.cap-item')].map(item => item.classList.contains('open')) : [];
+  if (!preserveScroll) window.scrollTo(0, 0);
 
   const featured = (portfolioPreview || PROJECTS)
     .filter(p => p.featured)
@@ -530,196 +617,76 @@ function renderHome() {
   document.getElementById('app').innerHTML = `
 
     <section class="hero" id="hero">
-      <div class="hero-video">
+      ${home.hero.video ? `<div class="hero-video">
         <iframe
-          src="https://player.vimeo.com/video/1217666625?h=dfce6ecff5&background=1&autoplay=1&loop=1&muted=1&byline=0&title=0"
+          src="${CaseCopy.escape(homePlayer())}" title="Pixelpusher reel"
           allow="autoplay; fullscreen; picture-in-picture"
           allowfullscreen
         ></iframe>
-      </div>
+      </div>` : ''}
       <div class="hero-overlay"></div>
-      <p class="hero-eyebrow">Creative Studio \u2014 Toronto</p>
-      <h1 class="hero-h1">We Do<br>Impossible</h1>
-      <p class="hero-sub">Twenty-five years of campaigns, digital experiences, and brand moments that changed how people feel about the brands they love.</p>
-      <span class="hero-location">Est. 1999</span>
-      <span class="hero-scroll">Scroll to explore</span>
+      ${homeEditing() ? videoOptionsButton('homepage', Boolean(home.hero.video)) : ''}
+      <p class="hero-eyebrow">${homeText('hero.eyebrow')}</p>
+      <h1 class="hero-h1">${homeText('hero.headline')}</h1>
+      <p class="hero-sub">${homeText('hero.intro')}</p>
+      <span class="hero-location">${homeText('hero.established')}</span>
+      <span class="hero-scroll">${homeText('hero.scrollLabel')}</span>
     </section>
 
     <section class="work" id="work">
       <div class="section-header r">
-        <span class="section-header-title">Selected Work</span>
-        <a href="#/work" class="section-header-link">All Projects \u2192</a>
+        <span class="section-header-title">${homeText('work.heading')}</span>
+        <a href="#/work" class="section-header-link">${homeText('work.linkLabel')}</a>
       </div>
-      <p class="work-intro r d1">Ambitious briefs. Impossible results. A curated look at work that moved culture for the world\u2019s biggest brands.</p>
+      <p class="work-intro r d1">${homeText('work.intro')}</p>
       <div class="work-grid">
         ${buildGrid(featured, true)}
       </div>
     </section>
 
-    <section class="service service--cream" id="services">
-      <div>
-        <p class="service-num r">01</p>
-        <h2 class="service-title r d1">User<br>Experience</h2>
-      </div>
-      <div class="r d2">
-        <p class="service-copy">We design digital products people actually want to use. From the first interaction to the last, we map every moment of friction, every point of delight, and build experiences that feel inevitable \u2014 like they couldn\u2019t have been made any other way.</p>
-        <ul class="caps">
-          <li class="cap-item">
-            <button class="cap-btn"><span>UX Research &amp; Strategy</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">We start by understanding people before we start designing for them. Interviews, usability tests, and analytics \u2014 we dig until we know what actually matters.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Information Architecture</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Every piece of content has a home. We build the structures that make complex information feel effortless to navigate.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Interaction Design</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">The details that make digital feel physical. Micro-interactions, transitions, and feedback states that turn using software into a pleasure.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Prototyping &amp; Testing</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">We build to learn. Rapid prototypes put real ideas in front of real people before a single line of production code is written.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Design Systems</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Consistency at scale. A single source of truth for every component, pattern, and decision across your entire product.</div></div>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="service service--ecru">
-      <div>
-        <p class="service-num r">02</p>
-        <h2 class="service-title r d1">Development</h2>
-      </div>
-      <div class="r d2">
-        <p class="service-copy">Code is craft. We build what others say can\u2019t be built \u2014 performant, accessible, and obsessively detailed. Whether it\u2019s a marketing site or a custom interactive platform, we write the kind of code that holds up five years from now.</p>
-        <ul class="caps">
-          <li class="cap-item">
-            <button class="cap-btn"><span>Web &amp; Application Development</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">From marketing sites to complex web apps, we build with modern standards \u2014 fast, accessible, and designed to last.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Custom CMS Integration</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Content management that fits the way your team actually works. We make Sanity, Contentful, and Prismic feel completely native to your product.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>API &amp; Backend Engineering</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">The invisible architecture that makes everything run. Scalable, secure, and designed for the demands of modern digital products.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Performance Optimization</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Speed is a feature. We audit, refactor, and optimize until your product loads fast on any device, anywhere in the world.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>QA &amp; Launch Support</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Nothing ships without our sign-off. We test across devices, browsers, and edge cases so launch day is a celebration, not a crisis.</div></div>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="service service--warm">
-      <div>
-        <p class="service-num r">03</p>
-        <h2 class="service-title r d1">Digital<br>Activations</h2>
-      </div>
-      <div class="r d2">
-        <p class="service-copy">The best brand moments don\u2019t live on a screen \u2014 they happen in the world and get shared everywhere else. We design physical-digital experiences that put people inside the story, from concept through build to the last social post.</p>
-        <ul class="caps">
-          <li class="cap-item">
-            <button class="cap-btn"><span>Experiential Concept &amp; Design</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">The big idea that makes people stop, stay, and share. We concept experiences that are genuinely worth showing up for.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Interactive Installations</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Physical technology that responds to people in real time \u2014 touch, motion, sound, and light, orchestrated into a single unforgettable moment.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Event Technology</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">The infrastructure behind the magic. Custom software, hardware integration, and tech production that runs flawlessly under pressure.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Content Capture &amp; Distribution</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Every activation is a content opportunity. We plan the capture strategy before the doors open so nothing great goes unrecorded.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Live Production Support</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">On the ground, on the day. Our team manages every technical aspect of your activation from load-in to strike.</div></div>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="service service--charcoal">
-      <div>
-        <p class="service-num r">04</p>
-        <h2 class="service-title r d1">Artificial<br>Intelligence</h2>
-      </div>
-      <div class="r d2">
-        <p class="service-copy">AI isn\u2019t a trend we\u2019re chasing \u2014 it\u2019s a tool we\u2019ve been building with. We use it to accelerate creative, personalize experiences at scale, and solve problems that used to require ten times the budget and twice the time.</p>
-        <ul class="caps">
-          <li class="cap-item">
-            <button class="cap-btn"><span>Generative Creative Production</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">AI that accelerates without homogenizing. We use generative tools to push creative volume and variation while keeping the work unmistakably yours.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>AI-Powered Personalization</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Experiences that adapt in real time to who is experiencing them. Relevance at a scale no human team could manage alone.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Conversational Interfaces</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">Chatbots built to actually be useful \u2014 trained on your brand voice, connected to your data, and designed for real conversations.</div></div>
-          </li>
-          <li class="cap-item">
-            <button class="cap-btn"><span>Workflow Automation</span><span class="cap-icon">+</span></button>
-            <div class="cap-body"><div class="cap-inner">The repetitive work that drains your team? We automate it \u2014 briefing, resizing, reporting, scheduling \u2014 so people can focus on what only people can do.</div></div>
-          </li>
-        </ul>
-      </div>
-    </section>
+    ${home.services.map(homeService).join('')}
 
     <section class="about" id="about">
-      <h2 class="about-h2 r">Impossible<br>is our<br>brief.</h2>
+      <h2 class="about-h2 r">${homeText('about.heading')}</h2>
       <div class="about-stats">
         <div>
-          <p class="stat-n r" data-count="25" data-suffix="+">0</p>
-          <p class="stat-l">Years of doing impossible</p>
+          <p class="stat-n r"${homeStat(0)}>0</p>
+          <p class="stat-l">${homeText('about.stats.0.label')}</p>
         </div>
         <div>
-          <p class="stat-n r d1" data-count="200" data-suffix="+">0</p>
-          <p class="stat-l">Campaigns launched worldwide</p>
+          <p class="stat-n r d1"${homeStat(1)}>0</p>
+          <p class="stat-l">${homeText('about.stats.1.label')}</p>
         </div>
         <div>
-          <p class="stat-n r d2" data-count="47">0</p>
-          <p class="stat-l">Industry awards</p>
+          <p class="stat-n r d2"${homeStat(2)}>0</p>
+          <p class="stat-l">${homeText('about.stats.2.label')}</p>
         </div>
       </div>
       <div class="about-body">
-        <p class="about-p r">Pixelpusher is a Toronto-based creative studio that has spent over two decades proving that the best ideas are the ones nobody thought could work. We are relentless in the pursuit of work that matters \u2014 work that changes how people feel about a brand, a product, or an idea.</p>
-        <p class="about-p r d1">We\u2019ve partnered with Colgate, Cadillac, Gatorade, Adidas, Ford, and Shiseido, among many others. The briefs were ambitious. The results were things nobody had seen before. That\u2019s not a coincidence \u2014 that\u2019s the standard we set for every project we take on.</p>
+        <p class="about-p r">${homeText('about.paragraphs.0')}</p>
+        <p class="about-p r d1">${homeText('about.paragraphs.1')}</p>
       </div>
     </section>
 
     <section class="clients">
-      <p class="clients-label">Our Clients</p>
+      <p class="clients-label">${homeText('clients.heading')}</p>
       <div class="marquee">
-        ${marqueeHtml()}
+        ${homeMarquee()}
       </div>
     </section>
 
     <section class="contact" id="contact">
-      <p class="contact-label r">Get in Touch</p>
-      <h2 class="contact-h2 r d1">Ready to do<br>impossible?</h2>
-      <p class="contact-sub r d2">Let\u2019s build something nobody\u2019s ever seen before. Tell us about your brief \u2014 the more impossible it sounds, the more interested we are.</p>
-      <a href="mailto:hello@pixelpusher.ca" class="contact-btn r d3">Start a Project \u2192</a>
+      <p class="contact-label r">${homeText('contact.eyebrow')}</p>
+      <h2 class="contact-h2 r d1">${homeText('contact.heading')}</h2>
+      <p class="contact-sub r d2">${homeText('contact.intro')}</p>
+      <a href="mailto:${CaseCopy.escape(home.contact.email)}" class="contact-btn r d3">${homeText('contact.linkLabel')}</a>
     </section>
 
   `;
 
   initReveal();
   initCaps();
+  document.querySelectorAll('.cap-item').forEach((item, index) => item.classList.toggle('open', Boolean(opened[index])));
 }
 
 // ── CAPS EXPAND ───────────────────────────────────────────
@@ -901,10 +868,7 @@ function renderCase(id, preserveScroll = false) {
       </div>
     </section>
 
-    ${editorPreview && !portfolioPreview ? `
-      <div class="case-video-editor">
-        <button type="button" data-video-options aria-haspopup="dialog">${CaseCopy.read(p, 'video') ? 'Edit video' : 'Add video'}</button>
-      </div>` : ''}
+    ${editorPreview && !portfolioPreview ? videoOptionsButton(id, Boolean(CaseCopy.read(p, 'video'))) : ''}
     ${p.videoId || (editorPreview && p.videoId === undefined && p.vimeoId)
       ? videoBlock(CaseCopy.read(p, 'video')) : ''}
 
@@ -993,11 +957,28 @@ function setMeta(content) {
 }
 
 // ── BOOT ──────────────────────────────────────────────────
+fetch('/home.json')
+  .then(response => {
+    if (!response.ok) throw new Error('Could not load homepage content.');
+    return response.json();
+  })
+  .then(content => {
+    home ??= content;
+    if (portfolioPreviewView === 'featured' && currentView !== 'home') renderPortfolioGrid('featured');
+    else if (!currentView) route();
+  })
+  .catch(() => {
+    if (!currentView && (!location.hash || location.hash === '#/')) {
+      document.getElementById('app').textContent = 'Could not load homepage content.';
+    }
+  });
+
 fetch('projects.json')
   .then(r => r.json())
   .then(data => {
     PROJECTS = data;
     if (!portfolioPreview) route();
+    if (homeEditing()) sendHomeReady();
   })
   .catch(() => {
     document.getElementById('app').innerHTML =

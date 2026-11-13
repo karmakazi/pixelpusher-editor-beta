@@ -107,3 +107,7 @@ iframe.mobile { width: min(100%, 390px); }
 #video-status { font-size: .82rem; }
 #video-status:empty { display: none; }
 #video-player { display: block; aspect-ratio: 16 / 9; min-height: 0; margin-top: .75rem; }
+
+#home-video { margin-top: .75rem; }
+#home-status { font-size: .85rem; }
+#home-status:empty { display: none; }
