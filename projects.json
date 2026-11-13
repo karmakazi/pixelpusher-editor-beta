@@ -519,8 +519,8 @@
     "tagline": "We turned the car into the controller.",
     "pullQuote": "Touch the door. Touch the hood. The car knows.",
     "copy": [
-      "Isobar and Cadillac wanted to launch the XT4 — a new, fun crossover aimed at a younger buyer — with something that matched the car’s energy. We built an immersive showcase using a wraparound LED screen that filled the viewer’s entire field of vision. Then we turned the car itself into an input device. Using Touch Designer, Microsoft Kinect, and Leap Motion, we mapped touch points across the XT4’s exterior.",
-      "Touching the car in key areas — the door, the roof, the hood — triggered real-time interactive animations across the surrounding screens, capturing the excitement and freedom the XT4 was designed to embody. The effect was immediate: the car felt alive before anyone had driven it."
+      "Isobar and Cadillac wanted to launch the XT4, a fun new crossover aimed at younger buyers, with something that matched the car’s energy. We built an immersive showcase with a wraparound LED screen that filled the viewer’s entire field of vision. Then we turned the car itself into an input device. Using TouchDesigner, Microsoft Kinect, and Leap Motion, we mapped touch points across the XT4’s exterior.",
+      "Touching the door, roof, or hood triggered real-time interactive animations across the surrounding screens, capturing the excitement and freedom the XT4 was designed to embody. The car felt alive before anyone had even driven it."
     ],
     "gallery": [
       {
@@ -531,17 +531,20 @@
       {
         "wide": false,
         "seed": "xt4-a",
-        "alt": "Touch sensor detail"
+        "alt": "Touch sensor detail",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/7271e69c-c05a-4560-9c14-7b9682c85077-PHd3TGmEFstIH0adiuOiXCvxP2ECvr.png"
       },
       {
         "wide": false,
         "seed": "xt4-b",
-        "alt": "LED wraparound screen"
+        "alt": "LED wraparound screen",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/7c665d39-40ee-47bc-afc3-c75c2c317a5e-ZzsMZEGJ3BGvrDJa202Sr35pnxHyIz.png"
       },
       {
         "wide": true,
         "seed": "xt4-wide2",
-        "alt": "Interactive animation output"
+        "alt": "Interactive animation output",
+        "src": "https://cyoptlxuhubu8wpm.public.blob.vercel-storage.com/case-studies/65dc1c00-04e0-4eab-ae61-6ad7f5773e77-o9Gn0YfBqIrpWYcAX1iEroPduSkoBt.png"
       }
     ],
     "meta": {
